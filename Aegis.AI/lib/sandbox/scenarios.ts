@@ -1,0 +1,55 @@
+import type { SandboxScenario } from './types';
+
+export const SANDBOX_SCENARIOS: SandboxScenario[] = [
+  {
+    id: 1,
+    title: 'Normal User Operations',
+    subtext: 'Simulates web browsing, document editing, and background OS processes.',
+    badge: 'LOW RISK BASELINE',
+    badgeClassName: 'bg-aegis-success/10 text-aegis-success border-aegis-success/20',
+    telemetry: {
+      hostname: 'SANDBOX-VIVA',
+      process_name: 'chrome.exe',
+      pid: 4104,
+      cpu_percent: 8,
+      memory_mb: 384,
+      thread_count: 22,
+      open_handles: 310,
+      loaded_modules: 28,
+    },
+  },
+  {
+    id: 2,
+    title: 'Resource Intensive Task',
+    subtext: 'Simulates large video exporting, software compilation, or database backups.',
+    badge: 'HIGH RESOURCE',
+    badgeClassName: 'bg-aegis-warning/10 text-aegis-warning border-aegis-warning/20',
+    telemetry: {
+      hostname: 'SANDBOX-VIVA',
+      process_name: 'ffmpeg.exe',
+      pid: 8821,
+      cpu_percent: 74,
+      memory_mb: 2944,
+      thread_count: 58,
+      open_handles: 760,
+      loaded_modules: 62,
+    },
+  },
+  {
+    id: 3,
+    title: 'Simulated Ransomware Behavior',
+    subtext: 'Simulates rapid file handle iteration, thread spikes, and memory injection.',
+    badge: 'RANSOMWARE SIM',
+    badgeClassName: 'bg-aegis-danger/10 text-aegis-danger border-aegis-danger/20',
+    telemetry: {
+      hostname: 'SANDBOX-VIVA',
+      process_name: 'encryptor_sim.exe',
+      pid: 2345,
+      cpu_percent: 91,
+      memory_mb: 1984,
+      thread_count: 192,
+      open_handles: 1820,
+      loaded_modules: 118,
+    },
+  },
+];

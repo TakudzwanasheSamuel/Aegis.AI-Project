@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AegisAI Design System - Dark-first enterprise tokens */
+    --bg-primary: #09090b;
+    --bg-secondary: #111217;
+    --bg-surface: #181a20;
+    --bg-elevated: #20232b;
+    --bg-sidebar: #0d1017;
+
+    --accent-primary: #6366f1;
+    --accent-secondary: #22d3ee;
+
+    --status-success: #10b981;
+    --status-warning: #f59e0b;
+    --status-danger: #ef4444;
+    --status-critical: #dc2626;
+    --status-info: #3b82f6;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    --border-subtle: rgba(255, 255, 255, 0.06);
+
+    --radius-card: 20px;
+    --radius-button: 14px;
+
+    --glow-primary: 0 0 35px rgba(99, 102, 241, 0.18);
+    --glow-danger: 0 0 20px rgba(239, 68, 68, 0.25);
+
+    /* shadcn-compatible HSL tokens (dark theme mapped to AegisAI palette) */
+    --background: 240 6% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 11% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 14% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 187 85% 53%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 14% 18%;
+    --muted-foreground: 215 25% 65%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 14% 20%;
+    --input: 220 14% 18%;
+    --ring: 239 84% 67%;
+    --radius: 0.875rem;
+
+    --chart-1: 239 84% 67%;
+    --chart-2: 187 85% 53%;
+    --chart-3: 160 84% 39%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 84% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* Glassmorphic surface used across the app shell */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Card surface gradient */
+  .surface-card {
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.02)
+    );
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .surface-elevated {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* Primary gradient button */
+  .btn-gradient {
+    background-image: linear-gradient(90deg, #6366f1, #22d3ee);
+    color: #ffffff;
+    box-shadow: var(--glow-primary);
+  }
+
+  /* Gradient text for branding / active states */
+  .text-gradient {
+    background-image: linear-gradient(90deg, #6366f1, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .glow-primary {
+    box-shadow: var(--glow-primary);
+  }
+  .glow-danger {
+    box-shadow: var(--glow-danger);
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out both;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

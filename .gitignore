@@ -1,74 +1,36 @@
-# ── Python ──────────────────────────────────────────────────────────────────
-venv/
-.venv/
-env/
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.ipynb_checkpoints/
-
-# ── Node / Next.js ──────────────────────────────────────────────────────────
-node_modules/
-.next/
-out/
-build/
-dist/
-.vercel/
-.turbo/
+﻿# Node.js & Next.js Builds
+**/node_modules/
+**/.next/
+**/.bolt/
+**/out/
+**/build/
+**/dist/
 *.tsbuildinfo
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+next-env.d.ts
 
-# ── Environment & secrets ───────────────────────────────────────────────────
-.env
-.env.*
-!.env.example
-!.env.*.example
-*.pem
-credentials.json
-secrets.json
+# Python Virtual Environments & Caches
+**/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.pytest_cache/
 
-# ── Local SQLite / runtime state ────────────────────────────────────────────
+# Datasets & Large Raw Files
+**/data/raw/
+*.csv
+*.zip
+*.tar.gz
+
+# SQLite Databases & Local Storage
 *.db
-*.db-journal
-*.sqlite
 *.sqlite3
-aegis-backend/app/data/*.db
-!aegis-backend/app/data/.gitkeep
+**/app/data/*.db
 
-# ── CIC-MalMem-2022 raw dump (public corpus; keep local) ────────────────────
-aegis-backend/data/raw/*.csv
-aegis-backend/data/processed/*
-!aegis-backend/data/raw/.gitkeep
-!aegis-backend/data/processed/.gitkeep
-
-# ── OS / IDE ────────────────────────────────────────────────────────────────
+# Environment Variables & OS Files
+.env
+.env.local
+.env.*.local
 .DS_Store
 Thumbs.db
-Desktop.ini
-.idea/
-.vscode/
-*.swp
-*~
-
-# ── Logs & coverage ─────────────────────────────────────────────────────────
-*.log
-logs/
-htmlcov/
-.coverage
-coverage/
-
-# ── Nested frontend git repo ────────────────────────────────────────────────
-# Aegis.AI already has its own GitHub remote. Do not record it as a submodule
-# gitlink in this parent repository.
-Aegis.AI/
-
-# ── Local tooling leftovers ─────────────────────────────────────────────────
-.bolt/
-.cursor/
