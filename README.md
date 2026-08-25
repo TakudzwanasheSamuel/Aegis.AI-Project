@@ -2,6 +2,8 @@
 
 Explainable hybrid ransomware detection for a BSc Data Science dissertation: FastAPI inference with Random Forest + XGBoost + SHAP, a Next.js examiner console, and a lightweight psutil endpoint agent.
 
+The Next.js app in `Aegis.AI/` is already on GitHub at https://github.com/TakudzwanasheSamuel/Aegis.AI. This workspace root versions the FastAPI backend. Keep both directories locally; they are not a single GitHub monorepo yet.
+
 ## Layout
 
 - `aegis-backend/` — FastAPI gateway, ML artifacts, SQLite persistence, endpoint agent
