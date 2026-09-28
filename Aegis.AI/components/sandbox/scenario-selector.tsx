@@ -68,7 +68,7 @@ export function ScenarioSelector({
               disabled={isLoading}
               onClick={() => onLoadScenario(scenario)}
             >
-              {isLoading ? 'Sending to Gateway…' : `Load Scenario ${scenario.id}`}
+              {isLoading ? 'Sending…' : `Load Scenario ${scenario.id}`}
             </Button>
           </div>
         );

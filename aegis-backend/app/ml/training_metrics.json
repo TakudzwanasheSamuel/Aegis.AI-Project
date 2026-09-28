@@ -1,253 +1,82 @@
 {
   "dataset": "CIC-MalMem-2022",
-  "n_samples": 58596,
+  "n_samples": 58062,
   "n_features": 8,
   "features": [
-    "handles.nhandles",
+    "pslist.nproc",
+    "pslist.nppid",
     "pslist.avg_threads",
+    "pslist.avg_handlers",
     "dlllist.ndlls",
-    "malfind.commitCharge",
-    "svcscan.nservices",
-    "ldrmodules.not_in_load",
-    "handles.nfile",
-    "malfind.ninjections"
+    "dlllist.avg_dlls_per_proc",
+    "handles.nhandles",
+    "handles.avg_handles_per_proc"
   ],
-  "test_size": 0.2,
-  "smote": true,
-  "scaler": "StandardScaler",
-  "class_counts": {
-    "benign": 29298,
-    "malware": 29298
-  },
+  "scaler": "None (tree models require no scaling)",
   "class_distribution": {
-    "pre_smote_train": {
-      "benign": 23438,
-      "malware": 23438
+    "benign": 29231,
+    "malware": 28831
+  },
+  "models": {
+    "RandomForest": {
+      "accuracy": 0.999483337638853,
+      "precision": 0.9998264491496008,
+      "recall": 0.9991328477280611,
+      "f1": 0.9994795281054824,
+      "roc_auc": 0.9999981313291216,
+      "confusion_matrix": {
+        "tn": 5846,
+        "fp": 1,
+        "fn": 5,
+        "tp": 5761
+      }
     },
-    "post_smote_train": {
-      "benign": 23438,
-      "malware": 23438
+    "XGBoost": {
+      "accuracy": 0.9995694480323775,
+      "precision": 1.0,
+      "recall": 0.9991328477280611,
+      "f1": 0.9995662357942222,
+      "roc_auc": 0.9999991843103307,
+      "confusion_matrix": {
+        "tn": 5847,
+        "fp": 0,
+        "fn": 5,
+        "tp": 5761
+      }
     }
   },
-  "random_forest": {
-    "accuracy": 1.0,
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
-    "roc_auc": 1.0,
-    "confusion_matrix": {
-      "true_positive": 5860,
-      "false_positive": 0,
-      "true_negative": 5860,
-      "false_negative": 0
-    },
-    "feature_importance": [
-      {
-        "feature": "svcscan.nservices",
-        "importance": 0.2664036452150278
-      },
-      {
-        "feature": "dlllist.ndlls",
-        "importance": 0.2514657142490591
-      },
-      {
-        "feature": "handles.nhandles",
-        "importance": 0.19287774963213286
-      },
-      {
-        "feature": "ldrmodules.not_in_load",
-        "importance": 0.13183686560200703
-      },
-      {
-        "feature": "pslist.avg_threads",
-        "importance": 0.10048524553901296
-      },
-      {
-        "feature": "handles.nfile",
-        "importance": 0.044818479718711446
-      },
-      {
-        "feature": "malfind.commitCharge",
-        "importance": 0.010316419858433496
-      },
-      {
-        "feature": "malfind.ninjections",
-        "importance": 0.0017958801856154069
-      }
-    ]
-  },
-  "xgboost": {
-    "accuracy": 0.9997440273037542,
-    "precision": 0.9998293224099676,
-    "recall": 0.9996587030716724,
-    "f1": 0.9997440054612168,
-    "roc_auc": 0.9999999126373051,
-    "confusion_matrix": {
-      "true_positive": 5858,
-      "false_positive": 1,
-      "true_negative": 5859,
-      "false_negative": 2
-    },
-    "feature_importance": [
-      {
-        "feature": "svcscan.nservices",
-        "importance": 0.9854903221130371
-      },
-      {
-        "feature": "ldrmodules.not_in_load",
-        "importance": 0.005742162466049194
-      },
-      {
-        "feature": "malfind.commitCharge",
-        "importance": 0.0032282311003655195
-      },
-      {
-        "feature": "pslist.avg_threads",
-        "importance": 0.002316099125891924
-      },
-      {
-        "feature": "handles.nfile",
-        "importance": 0.000951702066231519
-      },
-      {
-        "feature": "handles.nhandles",
-        "importance": 0.0008962778374552727
-      },
-      {
-        "feature": "malfind.ninjections",
-        "importance": 0.0007972423918545246
-      },
-      {
-        "feature": "dlllist.ndlls",
-        "importance": 0.0005779658094979823
-      }
-    ]
-  },
-  "roc_curve": [
+  "feature_importance": [
     {
-      "fpr": 0.0,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 0.9994880546075086
+      "feature": "dlllist.avg_dlls_per_proc",
+      "importance": 0.2938454698574673
     },
     {
-      "fpr": 0.041666666666666664,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "handles.avg_handles_per_proc",
+      "importance": 0.20180881079046264
     },
     {
-      "fpr": 0.08333333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "pslist.avg_handlers",
+      "importance": 0.17817342979978154
     },
     {
-      "fpr": 0.125,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "handles.nhandles",
+      "importance": 0.11673656468055288
     },
     {
-      "fpr": 0.16666666666666666,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "pslist.avg_threads",
+      "importance": 0.0997247866533607
     },
     {
-      "fpr": 0.20833333333333331,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "dlllist.ndlls",
+      "importance": 0.07636728135951464
     },
     {
-      "fpr": 0.25,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "pslist.nppid",
+      "importance": 0.02780707723822679
     },
     {
-      "fpr": 0.29166666666666663,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.3333333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.375,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.41666666666666663,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.4583333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.5,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.5416666666666666,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.5833333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.625,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.6666666666666666,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.7083333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.75,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.7916666666666666,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.8333333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.875,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.9166666666666666,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 0.9583333333333333,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
-    },
-    {
-      "fpr": 1.0,
-      "tprRandomForest": 1.0,
-      "tprXgboost": 1.0
+      "feature": "pslist.nproc",
+      "importance": 0.0055365796206335305
     }
   ]
 }

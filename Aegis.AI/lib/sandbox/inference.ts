@@ -5,13 +5,16 @@ import { API_BASE_URL } from '@/lib/api';
 export function buildAssessPayload(telemetry: TelemetryPayload): TelemetryPayload {
   return {
     hostname: telemetry.hostname || 'SANDBOX-VIVA',
-    process_name: telemetry.process_name || 'unknown.exe',
-    pid: Number.isFinite(telemetry.pid) ? Math.trunc(telemetry.pid) : 0,
-    cpu_percent: Number(telemetry.cpu_percent) || 0,
-    memory_mb: Number(telemetry.memory_mb) || 0,
-    thread_count: Math.max(1, Math.trunc(Number(telemetry.thread_count) || 1)),
-    open_handles: Math.max(0, Math.trunc(Number(telemetry.open_handles) || 0)),
-    loaded_modules: Math.max(0, Math.trunc(Number(telemetry.loaded_modules) || 0)),
+    snapshot_label: telemetry.snapshot_label || 'SYSTEM_SNAPSHOT',
+    accessible_processes: Math.max(0, Math.trunc(Number(telemetry.accessible_processes) || 0)),
+    pslist_nproc: Math.max(0, Math.trunc(Number(telemetry.pslist_nproc) || 0)),
+    pslist_nppid: Math.max(0, Math.trunc(Number(telemetry.pslist_nppid) || 0)),
+    pslist_avg_threads: Number(telemetry.pslist_avg_threads) || 0,
+    pslist_avg_handlers: Number(telemetry.pslist_avg_handlers) || 0,
+    dlllist_ndlls: Math.max(0, Math.trunc(Number(telemetry.dlllist_ndlls) || 0)),
+    dlllist_avg_dlls_per_proc: Number(telemetry.dlllist_avg_dlls_per_proc) || 0,
+    handles_nhandles: Math.max(0, Math.trunc(Number(telemetry.handles_nhandles) || 0)),
+    handles_avg_handles_per_proc: Number(telemetry.handles_avg_handles_per_proc) || 0,
   };
 }
 
@@ -79,30 +82,18 @@ export async function sendTelemetryToGateway(
 const CSV_KEY_MAP: Record<string, keyof TelemetryPayload> = {
   hostname: 'hostname',
   host: 'hostname',
-  process_name: 'process_name',
-  processname: 'process_name',
-  process: 'process_name',
-  pid: 'pid',
-  cpu_percent: 'cpu_percent',
-  cpu_utilization: 'cpu_percent',
-  cpuutilization: 'cpu_percent',
-  cpu: 'cpu_percent',
-  memory_mb: 'memory_mb',
-  ram_allocation_mb: 'memory_mb',
-  ramallocationmb: 'memory_mb',
-  ram: 'memory_mb',
-  thread_count: 'thread_count',
-  active_thread_count: 'thread_count',
-  activethreadcount: 'thread_count',
-  threads: 'thread_count',
-  open_handles: 'open_handles',
-  open_handle_count: 'open_handles',
-  openhandlecount: 'open_handles',
-  handles: 'open_handles',
-  loaded_modules: 'loaded_modules',
-  loadedmodules: 'loaded_modules',
-  modules: 'loaded_modules',
-  dlls: 'loaded_modules',
+  snapshot_label: 'snapshot_label',
+  snapshotlabel: 'snapshot_label',
+  accessible_processes: 'accessible_processes',
+  accessibleprocesses: 'accessible_processes',
+  pslist_nproc: 'pslist_nproc',
+  pslist_nppid: 'pslist_nppid',
+  pslist_avg_threads: 'pslist_avg_threads',
+  pslist_avg_handlers: 'pslist_avg_handlers',
+  dlllist_ndlls: 'dlllist_ndlls',
+  dlllist_avg_dlls_per_proc: 'dlllist_avg_dlls_per_proc',
+  handles_nhandles: 'handles_nhandles',
+  handles_avg_handles_per_proc: 'handles_avg_handles_per_proc',
 };
 
 function normalizeKey(key: string) {
@@ -140,19 +131,22 @@ export function parseTelemetryFile(content: string, filename: string): Telemetry
 function mapRecordToTelemetry(record: Record<string, unknown>): TelemetryPayload {
   const telemetry: TelemetryPayload = {
     hostname: 'SANDBOX-VIVA',
-    process_name: 'uploaded.exe',
-    pid: 1000,
-    cpu_percent: 0,
-    memory_mb: 0,
-    thread_count: 1,
-    open_handles: 0,
-    loaded_modules: 0,
+    snapshot_label: 'UPLOADED_SNAPSHOT',
+    accessible_processes: 0,
+    pslist_nproc: 0,
+    pslist_nppid: 0,
+    pslist_avg_threads: 0,
+    pslist_avg_handlers: 0,
+    dlllist_ndlls: 0,
+    dlllist_avg_dlls_per_proc: 0,
+    handles_nhandles: 0,
+    handles_avg_handles_per_proc: 0,
   };
 
   for (const [rawKey, value] of Object.entries(record)) {
     const mappedKey = CSV_KEY_MAP[normalizeKey(rawKey)];
     if (!mappedKey || value === undefined || value === null || value === '') continue;
-    if (mappedKey === 'hostname' || mappedKey === 'process_name') {
+    if (mappedKey === 'hostname' || mappedKey === 'snapshot_label') {
       telemetry[mappedKey] = String(value);
     } else {
       telemetry[mappedKey] = Number(value);

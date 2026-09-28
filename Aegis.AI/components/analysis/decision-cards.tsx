@@ -54,22 +54,6 @@ export function RecommendationBanner({
           <p className="mt-1.5 text-sm leading-relaxed text-aegis-text-secondary">{recommendation}</p>
         </div>
       </div>
-
-      <div className="mt-4 flex items-start gap-3 rounded-card border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-aegis-accent-primary/20 bg-aegis-accent-primary/10">
-          <ShieldCheck className="h-4.5 w-4.5 text-aegis-accent-primary" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-aegis-accent-primary">
-            Decision-Support Mode
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-aegis-text-muted">
-            AegisAI triages and explains endpoint behaviour. Isolation, backup, and process-tree
-            actions remain outside this dissertation scope and require separate administrator
-            authorization.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

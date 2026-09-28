@@ -3,8 +3,8 @@ import { GraduationCap, ShieldCheck } from 'lucide-react';
 import type { ResearchBenchmark } from '@/lib/api';
 
 export function AcademicSummaryFooter({ benchmark }: { benchmark: ResearchBenchmark | null }) {
-  const rf = benchmark?.random_forest;
-  const xgb = benchmark?.xgboost;
+  const rf = benchmark?.models?.RandomForest;
+  const xgb = benchmark?.models?.XGBoost;
   const nFeatures = benchmark?.n_features ?? 8;
   const nSamples = benchmark?.n_samples ?? 58596;
 
@@ -16,8 +16,8 @@ export function AcademicSummaryFooter({ benchmark }: { benchmark: ResearchBenchm
     xgb
       ? `XGBoost benchmark test accuracy ${(xgb.accuracy * 100).toFixed(2)}%, F1 ${(xgb.f1 * 100).toFixed(2)}%, ROC-AUC ${xgb.roc_auc.toFixed(4)}.`
       : 'XGBoost is retained as a supervised benchmark, not as an unsupervised baseline.',
-    'SMOTE is applied on the training fold; CIC-MalMem-2022 is already class-balanced so resampled counts match the original train split.',
-    'Inference uses a scaled RF + XGBoost ensemble average; explanations come from Random Forest TreeExplainer.',
+    'The table and charts read the exported held-out scores in training_metrics.json.',
+    'Inference averages Random Forest and XGBoost; explanations come from Random Forest TreeExplainer.',
   ];
 
   return (

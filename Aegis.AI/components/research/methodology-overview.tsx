@@ -14,8 +14,8 @@ const ICONS = {
 export function MethodologyOverview({ benchmark }: { benchmark: ResearchBenchmark | null }) {
   const nSamples = benchmark?.n_samples ?? 58596;
   const nFeatures = benchmark?.n_features ?? 8;
-  const benign = benchmark?.class_counts?.benign;
-  const malware = benchmark?.class_counts?.malware;
+  const benign = benchmark?.class_distribution?.benign;
+  const malware = benchmark?.class_distribution?.malware;
   const split =
     benign != null && malware != null
       ? `${((benign / nSamples) * 100).toFixed(0)}% Benign / ${((malware / nSamples) * 100).toFixed(0)}% Malware`
@@ -36,8 +36,8 @@ export function MethodologyOverview({ benchmark }: { benchmark: ResearchBenchmar
       title: 'Feature Matrix',
       headline: `${nFeatures} Harmonized Features`,
       details: [
-        'Mapped from CIC-MalMem-2022 (58,596 samples)',
-        'handles, threads, DLLs, malfind, services, ldrmodules',
+        `Mapped from ${benchmark?.dataset ?? 'CIC-MalMem-2022'} (${nSamples.toLocaleString()} samples)`,
+        'process, thread, handle and DLL counts aggregated system-wide across all accessible processes.',
         'Live psutil telemetry projected onto this 8-column space',
       ],
       icon: 'features' as const,
@@ -46,9 +46,8 @@ export function MethodologyOverview({ benchmark }: { benchmark: ResearchBenchmar
       title: 'Validation Strategy',
       headline: 'Held-out test evaluation',
       details: [
-        `${Math.round((1 - (benchmark?.test_size ?? 0.2)) * 100)}/${Math.round((benchmark?.test_size ?? 0.2) * 100)} Train/Test Split`,
-        benchmark?.smote ? 'SMOTE applied on the training fold' : 'No SMOTE',
-        `${benchmark?.scaler ?? 'StandardScaler'} before RF + XGBoost`,
+        'Held-out test metrics from training_metrics.json',
+        benchmark?.scaler ?? 'Tree models',
       ],
       icon: 'validation' as const,
     },

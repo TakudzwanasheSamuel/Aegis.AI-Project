@@ -16,7 +16,7 @@ export default function SandboxPage() {
     <div>
       <PageHeader
         title="Scenario Sandbox"
-        subtitle="Live viva demonstrations against FastAPI /assess — RF + XGBoost inference with SHAP, no live malware required."
+        subtitle="Start a live simulation or load a scenario, then watch the verdict."
         icon={<Terminal className="h-6 w-6 text-aegis-accent-secondary" />}
         actions={
           <button

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ApiResponsePanel } from '@/components/sandbox/api-response-panel';
+import { LiveSimulationCard } from '@/components/sandbox/live-simulation-card';
 import { ScenarioSelector } from '@/components/sandbox/scenario-selector';
 import { TelemetrySliders } from '@/components/sandbox/telemetry-sliders';
 import { TelemetryUpload } from '@/components/sandbox/telemetry-upload';
@@ -26,6 +27,7 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const reset = useCallback(() => {
     setTelemetry(DEFAULT_TELEMETRY);
@@ -35,6 +37,7 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
     setSending(false);
     setUploading(false);
     setUploadError(null);
+    setShowAdvanced(false);
   }, []);
 
   useEffect(() => {
@@ -102,6 +105,8 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
 
   return (
     <div className="space-y-6">
+      <LiveSimulationCard />
+
       <ScenarioSelector
         scenarios={SANDBOX_SCENARIOS}
         activeScenarioId={activeScenarioId}
@@ -109,24 +114,33 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
         onLoadScenario={handleLoadScenario}
       />
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className="space-y-4">
-          <TelemetrySliders
-            telemetry={telemetry}
-            onChange={setTelemetry}
-            onSend={handleSendManual}
-            sending={sending}
-          />
-          <TelemetryUpload
-            onFileLoaded={handleFileLoaded}
-            uploading={uploading}
-            error={uploadError}
-            onClearError={() => setUploadError(null)}
-          />
-        </div>
-
-        <ApiResponsePanel response={response} loading={isLoading} />
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((open) => !open)}
+          className="text-sm font-medium text-aegis-text-secondary underline-offset-2 hover:text-aegis-text-primary hover:underline"
+        >
+          {showAdvanced ? 'Hide advanced controls' : 'Show advanced controls'}
+        </button>
+        {showAdvanced && (
+          <div className="mt-4 space-y-4">
+            <TelemetrySliders
+              telemetry={telemetry}
+              onChange={setTelemetry}
+              onSend={handleSendManual}
+              sending={sending}
+            />
+            <TelemetryUpload
+              onFileLoaded={handleFileLoaded}
+              uploading={uploading}
+              error={uploadError}
+              onClearError={() => setUploadError(null)}
+            />
+          </div>
+        )}
       </div>
+
+      <ApiResponsePanel response={response} loading={isLoading} />
     </div>
   );
 }

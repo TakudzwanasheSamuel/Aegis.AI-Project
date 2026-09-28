@@ -52,24 +52,11 @@ export function TelemetrySliders({
         </label>
         <label className="space-y-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-            Process name
+            Snapshot label
           </span>
           <Input
-            value={telemetry.process_name}
-            onChange={(event) => onChange({ ...telemetry, process_name: event.target.value })}
-            className="h-9 border-white/[0.08] bg-white/[0.03] text-xs"
-          />
-        </label>
-        <label className="space-y-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-            PID
-          </span>
-          <Input
-            type="number"
-            value={telemetry.pid}
-            onChange={(event) =>
-              onChange({ ...telemetry, pid: Number(event.target.value) || 0 })
-            }
+            value={telemetry.snapshot_label}
+            onChange={(event) => onChange({ ...telemetry, snapshot_label: event.target.value })}
             className="h-9 border-white/[0.08] bg-white/[0.03] text-xs"
           />
         </label>

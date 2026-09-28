@@ -97,8 +97,7 @@ export function IncidentLogTable({ incidents }: IncidentLogTableProps) {
                 {[
                   'Timestamp',
                   'Endpoint ID',
-                  'Process Name',
-                  'PID',
+                  'Snapshot',
                   'Risk Score',
                   'Classification Tag',
                   'SHAP Top Contributor',
@@ -118,7 +117,7 @@ export function IncidentLogTable({ incidents }: IncidentLogTableProps) {
               {incidents.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={8}
                     className="px-4 py-12 text-center text-sm text-aegis-text-muted"
                   >
                     No incidents match the current filters.
@@ -148,11 +147,8 @@ export function IncidentLogTable({ incidents }: IncidentLogTableProps) {
                             isHighSeverity ? 'text-aegis-danger' : 'text-aegis-text-primary',
                           )}
                         >
-                          {inc.processName}
+                          {inc.snapshot_label}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs tabular-nums text-aegis-text-muted">
-                        {inc.pid}
                       </td>
                       <td className="px-4 py-3">
                         <RiskScoreCell score={inc.riskScore} />

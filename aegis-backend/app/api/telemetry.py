@@ -32,6 +32,22 @@ SEVERITY_ALIASES = {
     "HIGH": "HIGH",
     "CRITICAL": "CRITICAL",
 }
+SEVERITY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
+BEHAV_TO_SEVERITY = {"SAFE": "LOW", "MEDIUM": "MEDIUM", "HIGH": "HIGH", "CRITICAL": "CRITICAL"}
+
+
+def _combine_verdicts(model_severity, model_risk, behav_level, behav_score):
+    """Final verdict is the more severe of the memory model and the behavioural monitor."""
+    behav_sev = BEHAV_TO_SEVERITY.get((behav_level or "SAFE").upper(), "LOW")
+    model_rank = SEVERITY_RANK.get(model_severity, 0)
+    behav_rank = SEVERITY_RANK.get(behav_sev, 0)
+    if behav_rank > model_rank:
+        return behav_sev, int(behav_score or 0), "behavioural"
+    if model_rank > behav_rank:
+        return model_severity, int(model_risk), "memory_model"
+    if int(behav_score or 0) > int(model_risk):
+        return behav_sev, int(behav_score or 0), "behavioural"
+    return model_severity, int(model_risk), "memory_model"
 
 
 def _as_utc(value: datetime | None) -> datetime:
@@ -65,29 +81,30 @@ def serialize_record(record: AssessmentRecord) -> AssessmentRecordOut:
     ]
 
     harmonized: dict[str, float] = {}
+    behav_level = None
+    behav_score = None
+    triggered_by = None
     if record.harmonized_vector:
         try:
             parsed = json.loads(record.harmonized_vector)
             if isinstance(parsed, dict):
-                harmonized = {str(key): float(value) for key, value in parsed.items()}
+                rank_to_sev = {0: "LOW", 1: "MEDIUM", 2: "HIGH", 3: "CRITICAL"}
+                for key, value in parsed.items():
+                    if key == "__behavioural_level":
+                        behav_level = rank_to_sev.get(int(value), "LOW")
+                    elif key == "__behavioural_score":
+                        behav_score = int(value)
+                    elif key == "__triggered_by":
+                        triggered_by = "behavioural" if float(value) >= 1.0 else "memory_model"
+                    else:
+                        harmonized[str(key)] = float(value)
         except (json.JSONDecodeError, TypeError, ValueError):
             harmonized = {}
-    if not harmonized:
-        harmonized = FeatureHarmonizationService.harmonize(
-            {
-                "cpu_percent": record.cpu_percent or 0.0,
-                "memory_mb": record.memory_mb or 0.0,
-                "thread_count": record.thread_count or 0,
-                "open_handles": record.open_handles or 0,
-                "loaded_modules": record.loaded_modules or 0,
-            }
-        )
-
     return AssessmentRecordOut(
         id=record.id,
         timestamp=_iso(record.timestamp),
         hostname=record.hostname,
-        process_name=record.process_name,
+        snapshot_label=record.process_name,
         pid=record.pid,
         prediction=record.prediction,
         confidence=record.confidence,
@@ -95,12 +112,10 @@ def serialize_record(record: AssessmentRecord) -> AssessmentRecordOut:
         severity=record.severity,
         top_shap_features=shap_features,
         recommendation=record.recommendation,
-        harmonized_vector=harmonized,
-        cpu_percent=record.cpu_percent,
-        memory_mb=record.memory_mb,
-        thread_count=record.thread_count,
-        open_handles=record.open_handles,
-        loaded_modules=record.loaded_modules,
+        harmonized_vector=harmonized or None,
+        behavioural_level=behav_level,
+        behavioural_score=behav_score,
+        triggered_by=triggered_by,
     )
 
 
@@ -113,61 +128,83 @@ async def assess_telemetry(payload: TelemetryPayload, db: Session = Depends(get_
         scaled = predictor.scale(harmonized)
         shap_features = shap_explainer.calculate_shap_values(scaled)
 
-        if severity == "CRITICAL":
+        behav_level = payload.behavioural_level or "SAFE"
+        behav_score = int(payload.behavioural_score or 0)
+        behav_reasons = payload.behavioural_reasons or []
+
+        final_severity, final_risk, triggered_by = _combine_verdicts(
+            severity, risk_score, behav_level, behav_score
+        )
+
+        if triggered_by == "behavioural":
+            prediction = "Critical Threat" if final_severity == "CRITICAL" else "Threat Detected"
             recommendation = (
-                "CRITICAL: Ransomware process pattern detected. "
-                "Immediate endpoint network isolation recommended."
+                "CRITICAL: Ransomware-like file activity detected on the endpoint "
+                f"({'; '.join(behav_reasons) if behav_reasons else 'high file rewrite and rename rate'}). "
+                "Isolate the endpoint and inspect the responsible process."
             )
-        elif severity == "HIGH":
+        elif final_severity == "CRITICAL":
             recommendation = (
-                "WARNING: Suspicious handle and thread allocations. "
-                "Investigate process executable and parent tree."
+                "CRITICAL: Memory pattern matches the malicious profile. "
+                "Investigate the endpoint and review SHAP contributors."
             )
-        elif severity == "MEDIUM":
+        elif final_severity == "HIGH":
             recommendation = (
-                "CAUTION: Process is outside the benign baseline. "
-                "Continue monitoring and review SHAP contributors."
+                "WARNING: Suspicious activity detected. "
+                "Investigate the process executable and file activity."
+            )
+        elif final_severity == "MEDIUM":
+            recommendation = (
+                "CAUTION: Endpoint is outside the benign baseline. Continue monitoring."
             )
         else:
             recommendation = (
-                "SAFE: Process operating within normal behavioral baseline parameters."
+                "SAFE: Endpoint operating within normal behavioral baseline parameters."
             )
+
+        stored_vector = dict(harmonized)
+        stored_vector["__behavioural_level"] = float(
+            SEVERITY_RANK.get(BEHAV_TO_SEVERITY.get(behav_level.upper(), "LOW"), 0)
+        )
+        stored_vector["__behavioural_score"] = float(behav_score)
+        stored_vector["__triggered_by"] = 1.0 if triggered_by == "behavioural" else 0.0
 
         record = crud.create_assessment(
             db,
             AssessmentRecord(
                 timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
                 hostname=payload.hostname,
-                process_name=payload.process_name,
-                pid=payload.pid,
+                process_name=payload.snapshot_label,
+                pid=payload.pid or 0,
                 prediction=prediction,
                 confidence=confidence,
-                risk_score=risk_score,
-                severity=severity,
+                risk_score=final_risk,
+                severity=final_severity,
                 top_shap_features=json.dumps(shap_features),
                 recommendation=recommendation,
-                harmonized_vector=json.dumps(harmonized),
-                cpu_percent=payload.cpu_percent,
-                memory_mb=payload.memory_mb,
-                thread_count=payload.thread_count,
-                open_handles=payload.open_handles,
-                loaded_modules=payload.loaded_modules,
+                harmonized_vector=json.dumps(stored_vector),
             ),
         )
 
         return AssessmentResponse(
             telemetry_id=record.id,
-            process_name=payload.process_name,
-            pid=payload.pid,
+            snapshot_label=payload.snapshot_label,
+            pid=payload.pid or 0,
             prediction=prediction,
             confidence=confidence,
-            risk_score=risk_score,
-            severity=severity,
+            risk_score=final_risk,
+            severity=final_severity,
             top_shap_features=[SHAPImpact(**feature) for feature in shap_features],
             harmonized_vector=harmonized,
             recommendation=recommendation,
             hostname=payload.hostname,
             timestamp=_iso(record.timestamp),
+            model_severity=severity,
+            model_risk_score=risk_score,
+            behavioural_level=behav_level,
+            behavioural_score=behav_score,
+            behavioural_reasons=behav_reasons,
+            triggered_by=triggered_by,
         )
     except HTTPException:
         raise

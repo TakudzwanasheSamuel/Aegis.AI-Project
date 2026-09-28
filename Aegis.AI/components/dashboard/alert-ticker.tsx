@@ -44,9 +44,15 @@ export function AlertTicker({ records }: AlertTickerProps) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`truncate text-xs font-semibold ${isHigh ? 'text-aegis-danger' : 'text-aegis-text-primary'}`}>
-                      {alert.process_name}
+                      {alert.snapshot_label}
                     </span>
-                    <span className="shrink-0 text-[10px] font-mono text-aegis-text-muted">PID {alert.pid}</span>
+                    {alert.triggered_by && (
+                      <span className="shrink-0 text-[10px] font-medium text-aegis-text-muted">
+                        {alert.triggered_by === 'behavioural'
+                          ? 'Behavioural file-activity detector'
+                          : 'Memory-forensic model'}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <Clock className="h-3 w-3 text-aegis-text-muted" />
@@ -62,7 +68,7 @@ export function AlertTicker({ records }: AlertTickerProps) {
                   className="flex shrink-0 items-center gap-1 rounded-lg border border-aegis-accent-primary/20 bg-aegis-accent-primary/10 px-2.5 py-1.5 text-[10px] font-semibold text-aegis-accent-primary transition-all duration-300 hover:bg-aegis-accent-primary/20"
                 >
                   <BrainCircuit className="h-3 w-3" />
-                  Analyze SHAP
+                  Analyze
                 </Link>
               </div>
             );

@@ -48,17 +48,17 @@ const INNOVATION_PILLARS = [
   {
     icon: Layers,
     title: 'Feature Harmonization Layer',
-    desc: 'Maps lightweight psutil runtime metrics into the high-dimensional space of memory-forensic features.',
+    desc: 'Aggregates per-process psutil measurements into the eight system-wide CIC-MalMem-2022 indicators the models expect.',
   },
   {
     icon: BrainCircuit,
     title: 'SHAP Explainability',
-    desc: 'Every prediction ships with per-feature SHAP attributions — no black-box alerts, full analyst transparency.',
+    desc: 'TreeExplainer attaches a ranked feature impact to every classification so an analyst can read why the model scored the snapshot.',
   },
   {
     icon: Cpu,
     title: 'Lightweight Agent',
-    desc: 'Sub-1% CPU footprint and under 20MB RAM, designed for resource-constrained and legacy hardware.',
+    desc: 'A psutil agent posts one system-wide snapshot per cycle. The console only classifies and explains that snapshot.',
   },
   {
     icon: DollarSign,
@@ -70,38 +70,38 @@ const INNOVATION_PILLARS = [
 const CAPABILITIES = [
   {
     icon: ShieldCheck,
-    title: 'Pre-Encryption Triaging',
-    desc: 'Detects ransomware behavioral signatures in the triage phase — before any file encryption begins.',
+    title: 'Classification, not containment',
+    desc: 'Scores a system-wide snapshot as Safe, Moderate, High, or Critical. It does not prevent, isolate, or stop an attack.',
     accent: '#6366F1',
   },
   {
     icon: BrainCircuit,
     title: 'SHAP Decision Transparency',
-    desc: 'Every threat verdict includes a ranked feature-attrtribution breakdown the analyst can audit.',
+    desc: 'Each verdict includes the live TreeExplainer impacts for the eight harmonized indicators.',
     accent: '#22D3EE',
   },
   {
     icon: Layers,
     title: 'Feature Harmonization Layer',
-    desc: 'Bridges psutil telemetry and memory-forensic feature spaces without requiring full memory dumps.',
+    desc: 'Aggregates per-process Windows measurements into system-wide indicators. A full memory dump is not required at inference time.',
     accent: '#10B981',
   },
   {
     icon: Zap,
-    title: 'Sub-Second API Inference',
-    desc: 'FastAPI async microservice delivers predictions in under 15ms per sample on modest hardware.',
+    title: 'FastAPI assessment',
+    desc: 'The gateway harmonizes the eight indicators, scores them with Random Forest and XGBoost, and returns SHAP.',
     accent: '#F59E0B',
   },
   {
     icon: Gauge,
-    title: 'Low System Footprint',
-    desc: 'Agent consumes less than 1% CPU and 20MB RAM — viable on the oldest machines in the field.',
+    title: 'Endpoint snapshot agent',
+    desc: 'The Python agent collects accessible processes and posts one system-wide snapshot. It does not act on the host.',
     accent: '#3B82F6',
   },
   {
     icon: TestTube,
     title: 'Interactive Viva Sandbox',
-    desc: 'Replay and mutate attack scenarios in an isolated sandbox for defense evaluation and viva demos.',
+    desc: 'Posts synthetic system-wide snapshots to the same assess endpoint used by the live agent.',
     accent: '#DC2626',
   },
 ];
@@ -143,7 +143,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] px-4 py-1.5 backdrop-blur-md">
               <span className="text-sm">🚀</span>
               <span className="text-xs font-medium tracking-wide text-aegis-text-secondary">
-                Next-Gen Endpoint Defense • Explainable AI + Memory Forensics
+                Decision-support console • Explainable AI + Memory Forensics
               </span>
             </div>
 
@@ -153,8 +153,14 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-relaxed text-aegis-text-secondary lg:text-lg">
-              Bridging high-dimensional memory forensics with lightweight endpoint
-              telemetry. Detect zero-day ransomware before file encryption begins.
+              Models are trained on the CIC-MalMem-2022 memory-forensic dataset and
+              scored against live Windows endpoint telemetry. A Feature Harmonization
+              Layer aggregates per-process measurements into system-wide indicators.
+              TreeExplainer SHAP explains each classification. AegisAI is
+              decision-support only: it classifies and explains, and it does not
+              prevent, isolate, or stop an attack. Near-perfect benchmark accuracy
+              reflects the high separability of the dataset, and live performance is
+              evaluated separately.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -178,15 +184,15 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-aegis-text-muted">
               <span className="flex items-center gap-1.5">
                 <Activity className="h-3.5 w-3.5 text-aegis-success" />
-                100% RF Test Accuracy
+                CIC-MalMem-2022 benchmark
               </span>
               <span className="flex items-center gap-1.5">
                 <Zap className="h-3.5 w-3.5 text-aegis-accent-secondary" />
-                12ms Avg Inference
+                Decision-support mode
               </span>
               <span className="flex items-center gap-1.5">
                 <Cpu className="h-3.5 w-3.5 text-aegis-info" />
-                &lt;1% CPU Footprint
+                8 system-wide indicators
               </span>
             </div>
           </div>
@@ -291,8 +297,8 @@ export default function LandingPage() {
             End-to-End Detection Pipeline
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-aegis-text-muted">
-            From endpoint telemetry to analyst-facing verdict — click any stage
-            to explore its role in the pipeline.
+            From the endpoint agent to the analyst console. Click a stage. Traffic
+            moves one way and never returns a control command to the host.
           </p>
         </div>
 
@@ -360,9 +366,10 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="mt-4 text-xs leading-relaxed text-aegis-text-muted">
-              An explainable AI ransomware detection platform developed as part
+              An explainable ransomware classification console developed as part
               of a BSc Honours Data Science dissertation at Midlands State
-              University.
+              University. It classifies snapshots and explains them. It does not
+              prevent, isolate, or stop an attack.
             </p>
           </div>
 
@@ -373,11 +380,10 @@ export default function LandingPage() {
             </p>
             <ul className="mt-4 space-y-2">
               {[
+                { label: 'Research Evaluation', href: '/research' },
                 { label: 'Executive Overview', href: '/dashboard' },
                 { label: 'Threat Analysis', href: '/analysis' },
-                { label: 'Historical Analytics', href: '/history' },
                 { label: 'Scenario Sandbox', href: '/sandbox' },
-                { label: 'Research Evaluation', href: '/research' },
               ].map((l) => (
                 <li key={l.href}>
                   <Link

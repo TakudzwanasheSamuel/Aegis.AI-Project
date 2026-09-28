@@ -1,13 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LayoutDashboard } from 'lucide-react';
 
 import { AlertTicker } from '@/components/dashboard/alert-ticker';
 import { DashboardStats } from '@/components/dashboard/stats-grid';
 import { ProcessTable } from '@/components/dashboard/process-table';
-import { RiskDoughnutChart } from '@/components/dashboard/risk-doughnut-chart';
-import { ThreatTrendChart } from '@/components/dashboard/threat-trend-chart';
 import { PageHeader } from '@/components/layout/page-header';
 import {
   fetchMetrics,
@@ -52,16 +50,6 @@ export function DashboardWorkspace() {
   }, [load]);
 
   const agentConnected = isAgentActive(metrics.latest_timestamp, 15000);
-  const trendPoints = useMemo(
-    () =>
-      [...recent]
-        .reverse()
-        .map((record, index) => ({
-          time: String(index + 1),
-          risk: record.risk_score,
-        })),
-    [recent],
-  );
 
   return (
     <div>
@@ -106,12 +94,7 @@ export function DashboardWorkspace() {
         <div className="lg:col-span-7">
           <ProcessTable records={recent} updatedAt={updatedAt} />
         </div>
-        <div className="space-y-4 lg:col-span-3">
-          <ThreatTrendChart data={trendPoints} />
-          <RiskDoughnutChart
-            counts={metrics.severity_counts}
-            total={metrics.total_scanned}
-          />
+        <div className="lg:col-span-3">
           <AlertTicker records={recent} />
         </div>
       </div>

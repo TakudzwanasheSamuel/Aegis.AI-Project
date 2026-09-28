@@ -13,6 +13,8 @@ export interface HistoricalIncident {
   id: string;
   timestamp: string;
   endpointId: string;
+  hostname?: string;
+  snapshot_label?: string;
   processName: string;
   pid: number;
   riskScore: number;

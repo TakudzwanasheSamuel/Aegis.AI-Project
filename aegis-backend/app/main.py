@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api import analytics, telemetry
+from app.api import demo as demo_router
 from app.database.session import get_db, init_db
 from app.schemas.telemetry import HealthResponse
 
@@ -25,6 +26,7 @@ app.add_middleware(
 
 app.include_router(telemetry.router)
 app.include_router(analytics.router)
+app.include_router(demo_router.router)
 
 
 @app.on_event("startup")

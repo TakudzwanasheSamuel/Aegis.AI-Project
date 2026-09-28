@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Folder, Hash, Monitor, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Clock, Monitor, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 import type { AssessmentRecord } from '@/lib/api';
 import { apiSeverityToUi } from '@/lib/history/map-record';
@@ -18,11 +18,13 @@ export function ProcessTargetHeader({ record }: { record: AssessmentRecord }) {
   const confidencePct = Math.round(record.confidence * 1000) / 10;
 
   const info = [
-    { icon: Hash, label: 'PID', value: String(record.pid) },
-    { icon: Folder, label: 'Process', value: record.process_name },
     { icon: Clock, label: 'Assessed', value: formatStamp(record.timestamp) },
     { icon: Monitor, label: 'Hostname', value: record.hostname },
   ];
+  const detector =
+    record.triggered_by === 'behavioural'
+      ? 'Detected by: Behavioural file-activity monitor'
+      : 'Detected by: Memory-forensic model';
 
   return (
     <div className="surface-card rounded-card overflow-hidden">
@@ -43,7 +45,7 @@ export function ProcessTargetHeader({ record }: { record: AssessmentRecord }) {
             )}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-aegis-text-primary">{record.process_name}</h2>
+            <h2 className="text-xl font-bold text-aegis-text-primary">{record.snapshot_label}</h2>
             <p className="mt-1 text-xs text-aegis-text-muted">
               Assessment #{record.id} · {record.prediction}
             </p>
@@ -93,9 +95,12 @@ export function ProcessTargetHeader({ record }: { record: AssessmentRecord }) {
               {record.risk_score}%
             </span>
             <span className="text-[10px] font-medium text-aegis-text-muted">
-              Risk score · {confidencePct}% model confidence
+              Risk score · {confidencePct}% confidence
             </span>
           </div>
+          <p className="max-w-[220px] text-center text-xs font-medium text-aegis-text-secondary">
+            {detector}
+          </p>
         </div>
       </div>
     </div>

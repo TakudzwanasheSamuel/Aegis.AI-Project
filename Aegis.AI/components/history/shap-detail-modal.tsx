@@ -49,7 +49,7 @@ export function ShapDetailModal({ incident, open, onOpenChange }: ShapDetailModa
                 Historical SHAP Explanation
               </DialogTitle>
               <DialogDescription className="text-aegis-text-muted">
-                {incident.processName} · PID {incident.pid} · {incident.endpointId}
+                {incident.snapshot_label} · {incident.hostname}
               </DialogDescription>
             </div>
           </div>

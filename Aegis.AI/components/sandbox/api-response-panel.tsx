@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Terminal } from 'lucide-react';
 
 import type { FastApiResponse } from '@/lib/sandbox/types';
 import { cn } from '@/lib/utils';
@@ -30,87 +29,41 @@ export function ApiResponsePanel({ response, loading }: ApiResponsePanelProps) {
     })) ?? [];
 
   return (
-    <div className="glass-panel flex h-full min-h-[520px] flex-col rounded-card border border-white/[0.08] p-6">
+    <div className="glass-panel flex h-full flex-col rounded-card border border-white/[0.08] p-6">
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-aegis-accent-primary/20 bg-aegis-accent-primary/10">
-            <Terminal className="h-4 w-4 text-aegis-accent-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-aegis-text-primary">
-              FastAPI Gateway Response
-            </h3>
-            <p className="text-xs text-aegis-text-muted">
-              Live inference · POST /api/v1/telemetry/assess
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-aegis-success animate-pulse-glow" />
-          <span className="text-[10px] font-medium uppercase tracking-wider text-aegis-text-muted">
-            Live
-          </span>
+        <div>
+          <h3 className="text-sm font-semibold text-aegis-text-primary">Result</h3>
+          <p className="text-xs text-aegis-text-muted">
+            The verdict from the last scenario you sent
+          </p>
         </div>
       </div>
 
-      <div className="mt-4 flex-1 overflow-hidden rounded-xl border border-white/[0.06] bg-[#0A0C10]">
-        <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-aegis-danger/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-aegis-warning/80" />
-          <span className="h-2.5 w-2.5 rounded-full bg-aegis-success/80" />
-          <span className="ml-2 font-mono text-[10px] text-aegis-text-muted">
-            aegis-fastapi-gateway :: response.json
-          </span>
-        </div>
+      {loading && (
+        <p className="mt-4 text-sm text-aegis-text-muted">Waiting for a result…</p>
+      )}
 
-        <div className="h-[calc(100%-36px)] overflow-auto p-4">
-          {loading ? (
-            <div className="space-y-3 animate-pulse">
-              <div className="h-3 w-3/4 rounded bg-white/[0.06]" />
-              <div className="h-3 w-full rounded bg-white/[0.06]" />
-              <div className="h-3 w-5/6 rounded bg-white/[0.06]" />
-              <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
-              <p className="pt-4 font-mono text-xs text-aegis-accent-secondary">
-                Awaiting inference response…
-              </p>
-            </div>
-          ) : response?.error ? (
-            <p className="font-mono text-xs leading-relaxed text-aegis-danger">{response.error}</p>
-          ) : assessment ? (
-            <pre className="font-mono text-[11px] leading-relaxed text-aegis-text-secondary">
-              {JSON.stringify(
-                {
-                  prediction: assessment.prediction,
-                  confidence: assessment.confidence,
-                  risk_score: assessment.risk_score,
-                  severity: assessment.severity,
-                  top_shap_features: assessment.top_shap_features,
-                  recommendation: assessment.recommendation,
-                },
-                null,
-                2,
-              )}
-            </pre>
-          ) : (
-            <p className="font-mono text-xs text-aegis-text-muted">
-              {'// Load a scenario, send telemetry, or upload a payload to view the API response.'}
-            </p>
-          )}
-        </div>
-      </div>
+      {!loading && response?.error && (
+        <p className="mt-4 text-sm text-aegis-danger">{response.error}</p>
+      )}
+
+      {!loading && !assessment && !response?.error && (
+        <p className="mt-4 text-sm text-aegis-text-muted">
+          Load a scenario to see the verdict here.
+        </p>
+      )}
 
       {assessment && !loading && (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <MetricPill
-              label="Status"
-              value={String(response?.status_code ?? 200)}
-              tone="success"
-            />
-            <MetricPill
-              label="Inference"
-              value={`${response?.inference_time_ms ?? 0}ms`}
-              tone="info"
+              label="Detector"
+              value={
+                assessment.triggered_by === 'behavioural'
+                  ? 'Behavioural monitor'
+                  : 'Memory-forensic model'
+              }
+              tone={assessment.triggered_by === 'behavioural' ? 'danger' : 'info'}
             />
             <MetricPill
               label="Prediction"
@@ -123,16 +76,21 @@ export function ApiResponsePanel({ response, loading }: ApiResponsePanelProps) {
               tone={severityTone(assessment.severity)}
             />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <MetricPill
+              label="Severity"
+              value={assessment.severity}
+              tone={severityTone(assessment.severity)}
+            />
             <MetricPill
               label="Confidence"
               value={`${(assessment.confidence * 100).toFixed(1)}%`}
               tone="info"
             />
             <MetricPill
-              label="Severity"
-              value={assessment.severity}
-              tone={severityTone(assessment.severity)}
+              label="Status"
+              value={String(response?.status_code ?? 200)}
+              tone="success"
             />
           </div>
 
@@ -190,6 +148,24 @@ export function ApiResponsePanel({ response, loading }: ApiResponsePanelProps) {
               </div>
             </div>
           )}
+
+          {assessment.harmonized_vector && (
+            <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-xs font-semibold text-aegis-text-primary">Harmonized vector</p>
+              <table className="mt-3 w-full">
+                <tbody>
+                  {Object.entries(assessment.harmonized_vector).map(([key, value]) => (
+                    <tr key={key} className="border-b border-white/[0.04]">
+                      <td className="py-1.5 pr-3 font-mono text-[11px] text-aegis-text-secondary">{key}</td>
+                      <td className="py-1.5 text-right font-mono text-[11px] tabular-nums text-aegis-text-primary">
+                        {value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -221,7 +197,7 @@ function MetricPill({
   return (
     <div className={cn('rounded-lg border px-3 py-2', toneClass)}>
       <p className="text-[10px] uppercase tracking-wider opacity-80">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold capitalize">{value}</p>
+      <p className="mt-0.5 text-sm font-semibold">{value}</p>
     </div>
   );
 }

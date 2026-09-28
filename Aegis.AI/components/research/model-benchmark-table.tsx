@@ -45,19 +45,19 @@ export function ModelBenchmarkTable() {
       });
   }, []);
 
-  const rows = benchmark
+  const rows = benchmark?.models
     ? [
         {
           algorithm: 'Random Forest Classifier',
           role: 'primary' as const,
-          metrics: benchmark.random_forest,
+          metrics: benchmark.models.RandomForest,
         },
         {
           algorithm: 'XGBoost Classifier',
           role: 'benchmark' as const,
-          metrics: benchmark.xgboost,
+          metrics: benchmark.models.XGBoost,
         },
-      ]
+      ].filter((row) => row.metrics)
     : [];
 
   return (

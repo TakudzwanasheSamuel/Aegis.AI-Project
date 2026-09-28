@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BrainCircuit } from 'lucide-react';
 
+import { BehaviouralReasons } from '@/components/analysis/behavioural-reasons';
 import { FeatureHarmonizationTable } from '@/components/analysis/harmonization-table';
 import { RecommendationBanner } from '@/components/analysis/decision-cards';
 import { ProcessTargetHeader } from '@/components/analysis/process-target-header';
@@ -27,6 +28,7 @@ export function AnalysisWorkspace() {
   const [recent, setRecent] = useState<AssessmentRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showMemoryModel, setShowMemoryModel] = useState(false);
 
   const options = useMemo(() => {
     const map = new Map(recent.map((item) => [item.id, item]));
@@ -49,8 +51,10 @@ export function AnalysisWorkspace() {
           const next = await fetchAssessment(lookupKey);
           if (cancelled) return;
           setRecord(next);
+          setShowMemoryModel(false);
         } else {
           setRecord(pickLatestFlagged(recentRecords));
+          setShowMemoryModel(false);
         }
         setError(null);
       } catch (err) {
@@ -67,11 +71,17 @@ export function AnalysisWorkspace() {
     };
   }, [lookupKey]);
 
+  const behavioural = record?.triggered_by === 'behavioural';
+
   return (
     <div>
       <PageHeader
-        title="Threat Analysis & SHAP"
-        subtitle="Live assessment explainability: SHAP attributions and the 8-feature harmonization layer."
+        title={behavioural ? 'Threat Analysis' : 'Threat Analysis & SHAP'}
+        subtitle={
+          behavioural
+            ? 'Why this assessment was flagged, and what to do next.'
+            : 'Live assessment explainability: SHAP attributions and the 8-feature harmonization layer.'
+        }
         icon={<BrainCircuit className="h-6 w-6 text-aegis-accent-secondary" />}
         actions={
           options.length > 0 ? (
@@ -87,7 +97,7 @@ export function AnalysisWorkspace() {
               >
                 {options.map((item) => (
                   <option key={item.id} value={item.id}>
-                    #{item.id} · {item.process_name} · PID {item.pid}
+                    #{item.id} · {item.snapshot_label} · {item.hostname}
                   </option>
                 ))}
               </select>
@@ -115,12 +125,38 @@ export function AnalysisWorkspace() {
       ) : (
         <div className="space-y-6">
           <ProcessTargetHeader record={record} />
-          <ShapExplainabilityPanel
-            features={record.top_shap_features}
-            prediction={record.prediction}
-            severity={record.severity}
-          />
-          <FeatureHarmonizationTable record={record} />
+          {behavioural ? (
+            <>
+              <BehaviouralReasons reasons={record.behavioural_reasons ?? []} />
+              <div className="surface-card rounded-card p-6">
+                <button
+                  type="button"
+                  onClick={() => setShowMemoryModel((open) => !open)}
+                  className="text-sm font-semibold text-aegis-text-primary"
+                >
+                  {showMemoryModel ? 'Hide memory-model view' : 'Memory-model view'}
+                </button>
+                {showMemoryModel && (
+                  <div className="mt-4">
+                    <ShapExplainabilityPanel
+                      features={record.top_shap_features}
+                      prediction={record.prediction}
+                      severity={record.severity}
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <ShapExplainabilityPanel
+              features={record.top_shap_features}
+              prediction={record.prediction}
+              severity={record.severity}
+            />
+          )}
+          {record.triggered_by === 'memory_model' && (
+            <FeatureHarmonizationTable record={record} />
+          )}
           <RecommendationBanner
             recommendation={record.recommendation}
             severity={record.severity}

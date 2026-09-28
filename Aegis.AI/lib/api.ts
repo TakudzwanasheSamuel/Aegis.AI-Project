@@ -10,7 +10,7 @@ export interface AssessmentRecord {
   id: number;
   timestamp: string;
   hostname: string;
-  process_name: string;
+  snapshot_label: string;
   pid: number;
   prediction: string;
   confidence: number;
@@ -19,11 +19,12 @@ export interface AssessmentRecord {
   top_shap_features: ShapImpact[];
   recommendation: string;
   harmonized_vector?: Record<string, number> | null;
-  cpu_percent?: number | null;
-  memory_mb?: number | null;
-  thread_count?: number | null;
-  open_handles?: number | null;
-  loaded_modules?: number | null;
+  behavioural_level?: string;
+  behavioural_score?: number;
+  behavioural_reasons?: string[];
+  triggered_by?: string;
+  model_severity?: string;
+  model_risk_score?: number;
 }
 
 export interface HistoryResponse {
@@ -58,12 +59,11 @@ export interface ModelSplitMetrics {
   f1: number;
   roc_auc: number;
   confusion_matrix?: {
-    true_positive: number;
-    false_positive: number;
-    true_negative: number;
-    false_negative: number;
+    tn: number;
+    fp: number;
+    fn: number;
+    tp: number;
   };
-  feature_importance?: { feature: string; importance: number }[];
 }
 
 export interface ResearchBenchmark {
@@ -71,17 +71,16 @@ export interface ResearchBenchmark {
   n_samples: number;
   n_features: number;
   features: string[];
-  test_size: number;
-  smote: boolean;
   scaler: string;
-  class_counts?: { benign: number; malware: number };
   class_distribution?: {
-    pre_smote_train: { benign: number; malware: number };
-    post_smote_train: { benign: number; malware: number };
+    benign: number;
+    malware: number;
   };
-  random_forest: ModelSplitMetrics;
-  xgboost: ModelSplitMetrics;
-  roc_curve?: { fpr: number; tprRandomForest: number; tprXgboost: number }[];
+  models: {
+    RandomForest: ModelSplitMetrics;
+    XGBoost: ModelSplitMetrics;
+  };
+  feature_importance?: { feature: string; importance: number }[];
 }
 
 async function fetchJson<T>(path: string): Promise<T> {

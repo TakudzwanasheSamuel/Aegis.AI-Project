@@ -38,10 +38,10 @@ export function ShapExplainabilityPanel({
 
   const summary =
     topPositive.length > 0
-      ? `The process was labelled ${prediction} (${severity}) primarily due to ${topPositive
+      ? `The snapshot was labelled ${prediction} (${severity}) primarily due to ${topPositive
           .map((entry) => `${entry.feature} (${entry.value >= 0 ? '+' : ''}${entry.value.toFixed(3)})`)
           .join(' and ')}.`
-      : `The process was labelled ${prediction} (${severity}). SHAP attributions are available above.`;
+      : `The snapshot was labelled ${prediction} (${severity}). SHAP attributions are available above.`;
 
   return (
     <div className="surface-card rounded-card p-6">

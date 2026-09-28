@@ -1,0 +1,365 @@
+{
+  "run_id": "20260922_0825",
+  "created": "2026-09-22T08:25:43",
+  "environment": {
+    "python": "3.14.6",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "pandas": "3.0.3",
+    "numpy": "2.4.6",
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.4.1",
+    "shap": "0.52.0",
+    "joblib": "1.5.3"
+  },
+  "status": "Part A complete",
+  "data": {
+    "raw_rows": 58596,
+    "duplicates_removed": 534,
+    "clean_rows": 58062,
+    "features": 55,
+    "class_counts": {
+      "Benign": 29231,
+      "Malware": 28831
+    },
+    "type_counts": {
+      "Benign": 29231,
+      "Spyware": 9815,
+      "Ransomware": 9529,
+      "Trojan": 9487
+    },
+    "train_rows": 46449,
+    "test_rows": 11613,
+    "test_benign": 5847,
+    "test_malware": 5766
+  },
+  "benchmark_results": {
+    "Random Forest": {
+      "Accuracy": 1.0,
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0,
+      "ROC-AUC": 1.0,
+      "PR-AUC": 1.0,
+      "TN": 5847.0,
+      "FP": 0.0,
+      "FN": 0.0,
+      "TP": 5766.0,
+      "CV accuracy mean": 0.999870828848224,
+      "CV accuracy SD": 0.00015820170566951833,
+      "CV precision mean": 0.9998699327863854,
+      "CV precision SD": 0.00010619944768904018,
+      "CV recall mean": 0.9998699327986127,
+      "CV recall SD": 0.00026013440277474766,
+      "CV f1 mean": 0.9998699186961302,
+      "CV f1 SD": 0.00015933559759111524,
+      "CV roc_auc mean": 0.9999994577057031,
+      "CV roc_auc SD": 9.206736272586573e-07
+    },
+    "XGBoost": {
+      "Accuracy": 1.0,
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0,
+      "ROC-AUC": 1.0,
+      "PR-AUC": 1.0,
+      "TN": 5847.0,
+      "FP": 0.0,
+      "FN": 0.0,
+      "TP": 5766.0,
+      "CV accuracy mean": 0.999870828848224,
+      "CV accuracy SD": 0.00015820170566951833,
+      "CV precision mean": 0.9998265958579395,
+      "CV precision SD": 0.0001622172804979014,
+      "CV recall mean": 0.9999132885324084,
+      "CV recall SD": 0.00017342293518316507,
+      "CV f1 mean": 0.9998699374974024,
+      "CV f1 SD": 0.0001592997773624125,
+      "CV roc_auc mean": 0.9999949710315192,
+      "CV roc_auc SD": 9.600302283912204e-06
+    }
+  },
+  "single_indicator_top10": {
+    "svcscan.nservices": 0.9966414990658187,
+    "svcscan.shared_process_services": 0.9964477353852452,
+    "svcscan.kernel_drivers": 0.9958664489787973,
+    "handles.nmutant": 0.9876208638735052,
+    "dlllist.avg_dlls_per_proc": 0.9872763750218583,
+    "handles.nsection": 0.9853387984746707,
+    "handles.avg_handles_per_proc": 0.9852311187660069,
+    "handles.nevent": 0.9847575143858593,
+    "pslist.avg_handlers": 0.9844776041571908,
+    "handles.nhandles": 0.9812482882806046
+  },
+  "mutual_information_top10": {
+    "svcscan.nservices": 0.6861119278730308,
+    "svcscan.shared_process_services": 0.6801278967464707,
+    "svcscan.kernel_drivers": 0.673630050613062,
+    "dlllist.avg_dlls_per_proc": 0.6709572989905828,
+    "handles.avg_handles_per_proc": 0.6575520609864242,
+    "pslist.avg_handlers": 0.6537339288698594,
+    "handles.nmutant": 0.6489332404992484,
+    "handles.nsection": 0.6414180599748991,
+    "handles.nevent": 0.6411252760681164,
+    "handles.nhandles": 0.6294657176628141
+  },
+  "ablation_without_svcscan": {
+    "Random Forest": {
+      "Accuracy": 0.9999138896064755,
+      "Precision": 1.0,
+      "Recall": 0.9998265695456122,
+      "F1": 0.9999132772526234,
+      "ROC-AUC": 1.0,
+      "PR-AUC": 1.0,
+      "TN": 5847.0,
+      "FP": 0.0,
+      "FN": 1.0,
+      "TP": 5765.0
+    },
+    "XGBoost": {
+      "Accuracy": 0.9999138896064755,
+      "Precision": 1.0,
+      "Recall": 0.9998265695456122,
+      "F1": 0.9999132772526234,
+      "ROC-AUC": 1.0,
+      "PR-AUC": 1.0,
+      "TN": 5847.0,
+      "FP": 0.0,
+      "FN": 1.0,
+      "TP": 5765.0
+    }
+  },
+  "shap_top10_benchmark": {
+    "svcscan.nservices": 4.461269855499268,
+    "handles.avg_handles_per_proc": 1.8190845251083374,
+    "svcscan.process_services": 1.0911086797714233,
+    "pslist.avg_threads": 0.5766115188598633,
+    "handles.nevent": 0.49095621705055237,
+    "handles.nthread": 0.4026106297969818,
+    "malfind.commitCharge": 0.29812902212142944,
+    "malfind.uniqueInjections": 0.24602088332176208,
+    "handles.nkey": 0.17105945944786072,
+    "ldrmodules.not_in_load": 0.16252006590366364
+  },
+  "deployment8_results": {
+    "Random Forest": {
+      "Accuracy": 0.999483337638853,
+      "Precision": 0.9998264491496008,
+      "Recall": 0.9991328477280611,
+      "F1": 0.9994795281054824,
+      "ROC-AUC": 0.9999981313291216,
+      "PR-AUC": 0.9999981126232834,
+      "TN": 5846.0,
+      "FP": 1.0,
+      "FN": 5.0,
+      "TP": 5761.0,
+      "CV accuracy mean": 0.9990957857141118,
+      "CV accuracy SD": 0.00018766830798470154,
+      "CV precision mean": 0.9994794018824592,
+      "CV precision SD": 0.00017338775635651558,
+      "CV recall mean": 0.9986993279861262,
+      "CV recall SD": 0.0004547187722393873,
+      "CV f1 mean": 0.9990891299082738,
+      "CV f1 SD": 0.0001892503035621117,
+      "CV roc_auc mean": 0.9999749662814784,
+      "CV roc_auc SD": 4.3743717589953e-05
+    },
+    "XGBoost": {
+      "Accuracy": 0.9995694480323775,
+      "Precision": 1.0,
+      "Recall": 0.9991328477280611,
+      "F1": 0.9995662357942222,
+      "ROC-AUC": 0.9999991843103307,
+      "PR-AUC": 0.999999008375353,
+      "TN": 5847.0,
+      "FP": 0.0,
+      "FN": 5.0,
+      "TP": 5761.0,
+      "CV accuracy mean": 0.9989450860370397,
+      "CV accuracy SD": 0.00021952647066509522,
+      "CV precision mean": 0.9996092901164747,
+      "CV precision SD": 8.677752101782768e-05,
+      "CV recall mean": 0.9982657706481681,
+      "CV recall SD": 0.00045471877223935553,
+      "CV f1 mean": 0.9989370202825733,
+      "CV f1 SD": 0.00022144307921663657,
+      "CV roc_auc mean": 0.9999874391147392,
+      "CV roc_auc SD": 1.0454491220152626e-05
+    }
+  },
+  "model_latency_ms": {
+    "Benchmark Random Forest": {
+      "Model median ms": 48.949300005915575,
+      "Model P95 ms": 67.6619600038974,
+      "SHAP median ms": NaN,
+      "SHAP P95 ms": NaN
+    },
+    "Benchmark XGBoost": {
+      "Model median ms": 30.459599998721387,
+      "Model P95 ms": 43.465190000279094,
+      "SHAP median ms": 35.77534999931231,
+      "SHAP P95 ms": 51.10269001015694
+    },
+    "Deployment Random Forest": {
+      "Model median ms": 45.47219999949448,
+      "Model P95 ms": 62.537465009518115,
+      "SHAP median ms": NaN,
+      "SHAP P95 ms": NaN
+    },
+    "Deployment XGBoost": {
+      "Model median ms": 9.992049999709707,
+      "Model P95 ms": 16.923619987210245,
+      "SHAP median ms": 13.809000003675465,
+      "SHAP P95 ms": 17.874275000940543
+    }
+  },
+  "inferential": {
+    "mannwhitney_harmonized": [
+      {
+        "Feature": "pslist.nproc",
+        "Benign median": 42.0,
+        "Malware median": 40.0,
+        "U statistic": 173929449.0,
+        "p-value": 0.0,
+        "Cliff's delta": -0.35504285921200696,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "pslist.nppid",
+        "Benign median": 12.0,
+        "Malware median": 16.0,
+        "U statistic": 418128094.5,
+        "p-value": 0.0,
+        "Cliff's delta": 0.5504832669932265,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "pslist.avg_threads",
+        "Benign median": 12.834219390000001,
+        "Malware median": 9.973684211,
+        "U statistic": 20787959.0,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9229150516111966,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "pslist.avg_handlers",
+        "Benign median": 289.3315192,
+        "Malware median": 208.725,
+        "U statistic": 4241992.5,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9842700395489431,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "dlllist.ndlls",
+        "Benign median": 2086.0,
+        "Malware median": 1557.0,
+        "U statistic": 12058173.5,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9552864385623072,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "dlllist.avg_dlls_per_proc",
+        "Benign median": 49.56952175,
+        "Malware median": 38.83333333,
+        "U statistic": 1397712.5,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9948170671336765,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "handles.nhandles",
+        "Benign median": 12186.0,
+        "Malware median": 8422.0,
+        "U statistic": 9079162.0,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9663330712657464,
+        "Bonferroni p": 0.0
+      },
+      {
+        "Feature": "handles.avg_handles_per_proc",
+        "Benign median": 291.0812801,
+        "Malware median": 209.65,
+        "U statistic": 3875162.0,
+        "p-value": 0.0,
+        "Cliff's delta": -0.9856303034478636,
+        "Bonferroni p": 0.0
+      }
+    ],
+    "confidence_intervals": [
+      {
+        "Model": "Benchmark Random Forest",
+        "Correct": 11613,
+        "Total": 11613,
+        "Accuracy": 1.0,
+        "Accuracy 95% CI low": 0.999682399584235,
+        "Accuracy 95% CI high": 1.0,
+        "Precision 95% CI low": 1.0,
+        "Precision 95% CI high": 1.0,
+        "Recall 95% CI low": 1.0,
+        "Recall 95% CI high": 1.0,
+        "F1 95% CI low": 1.0,
+        "F1 95% CI high": 1.0
+      },
+      {
+        "Model": "Benchmark XGBoost",
+        "Correct": 11613,
+        "Total": 11613,
+        "Accuracy": 1.0,
+        "Accuracy 95% CI low": 0.999682399584235,
+        "Accuracy 95% CI high": 1.0,
+        "Precision 95% CI low": 1.0,
+        "Precision 95% CI high": 1.0,
+        "Recall 95% CI low": 1.0,
+        "Recall 95% CI high": 1.0,
+        "F1 95% CI low": 1.0,
+        "F1 95% CI high": 1.0
+      },
+      {
+        "Model": "Deployment Random Forest",
+        "Correct": 11607,
+        "Total": 11613,
+        "Accuracy": 0.999483337638853,
+        "Accuracy 95% CI low": 0.9988757853290301,
+        "Accuracy 95% CI high": 0.9998103711720521,
+        "Precision 95% CI low": 0.9994718263349027,
+        "Precision 95% CI high": 1.0,
+        "Recall 95% CI low": 0.9982578321321262,
+        "Recall 95% CI high": 0.9998259689159945,
+        "F1 95% CI low": 0.9990517772374001,
+        "F1 95% CI high": 0.9998282141060304
+      },
+      {
+        "Model": "Deployment XGBoost",
+        "Correct": 11608,
+        "Total": 11613,
+        "Accuracy": 0.9995694480323775,
+        "Accuracy 95% CI low": 0.9989955237799261,
+        "Accuracy 95% CI high": 0.9998601866410963,
+        "Precision 95% CI low": 1.0,
+        "Precision 95% CI high": 1.0,
+        "Recall 95% CI low": 0.9982656804118426,
+        "Recall 95% CI high": 0.9998268113364236,
+        "F1 95% CI low": 0.9991307030788162,
+        "F1 95% CI high": 0.9999132922916847
+      }
+    ],
+    "mcnemar": [
+      {
+        "Model set": "Benchmark",
+        "RF right, XGB wrong": 0,
+        "RF wrong, XGB right": 0,
+        "Exact McNemar p": 1.0,
+        "Note": "No discordant predictions"
+      },
+      {
+        "Model set": "Deployment",
+        "RF right, XGB wrong": 3,
+        "RF wrong, XGB right": 4,
+        "Exact McNemar p": 1.0,
+        "Note": ""
+      }
+    ]
+  }
+}

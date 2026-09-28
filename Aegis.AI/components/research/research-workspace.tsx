@@ -9,7 +9,6 @@ import { ConfusionMatrixGraphic } from '@/components/research/confusion-matrix';
 import { FeatureImportanceChart } from '@/components/research/feature-importance-chart';
 import { MethodologyOverview } from '@/components/research/methodology-overview';
 import { ModelBenchmarkTable } from '@/components/research/model-benchmark-table';
-import { RocAucChart } from '@/components/research/roc-auc-chart';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { fetchResearchBenchmark, type ResearchBenchmark } from '@/lib/api';
@@ -30,17 +29,19 @@ export function ResearchWorkspace() {
       });
   }, []);
 
-  const confusion = benchmark?.random_forest.confusion_matrix;
-  const importance = benchmark?.random_forest.feature_importance ?? [];
-  const roc = benchmark?.roc_curve ?? [];
-  const pre = benchmark?.class_distribution?.pre_smote_train;
-  const post = benchmark?.class_distribution?.post_smote_train;
+  const confusion = benchmark?.models?.RandomForest?.confusion_matrix;
+  const importance = benchmark?.feature_importance ?? [];
+  const classes = benchmark?.class_distribution;
 
   return (
     <div>
       <PageHeader
         title="Research Evaluation"
-        subtitle="8 harmonized features mapped from CIC-MalMem-2022 (58,596 samples) · live training_metrics.json"
+        subtitle={
+          benchmark
+            ? `${benchmark.n_features} harmonized features mapped from ${benchmark.dataset} (${benchmark.n_samples.toLocaleString()} samples) · live training_metrics.json`
+            : 'Live training_metrics.json'
+        }
         icon={<BarChart3 className="h-6 w-6 text-aegis-accent-secondary" />}
         actions={
           <Button
@@ -76,28 +77,16 @@ export function ResearchWorkspace() {
           {confusion && (
             <ConfusionMatrixGraphic
               data={{
-                truePositive: confusion.true_positive,
-                falsePositive: confusion.false_positive,
-                trueNegative: confusion.true_negative,
-                falseNegative: confusion.false_negative,
+                truePositive: confusion.tp,
+                falsePositive: confusion.fp,
+                trueNegative: confusion.tn,
+                falseNegative: confusion.fn,
               }}
             />
           )}
-          {roc.length > 0 && benchmark && (
-            <RocAucChart
-              data={roc}
-              rfAuc={benchmark.random_forest.roc_auc}
-              xgbAuc={benchmark.xgboost.roc_auc}
-            />
-          )}
           {importance.length > 0 && <FeatureImportanceChart data={importance} />}
-          {pre && post && (
-            <ClassDistributionChart
-              preBenign={pre.benign}
-              preMalware={pre.malware}
-              postBenign={post.benign}
-              postMalware={post.malware}
-            />
+          {classes && (
+            <ClassDistributionChart benign={classes.benign} malware={classes.malware} />
           )}
         </div>
 

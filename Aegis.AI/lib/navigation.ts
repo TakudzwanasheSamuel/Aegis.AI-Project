@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   BrainCircuit,
-  Database,
   Terminal,
   BarChart3,
   ShieldCheck,
@@ -23,6 +22,12 @@ export const navRoutes: NavRoute[] = [
     description: 'Platform overview & entry point',
   },
   {
+    label: 'Research Evaluation',
+    href: '/research',
+    icon: BarChart3,
+    description: 'Model performance & benchmark reports',
+  },
+  {
     label: 'Executive Overview',
     href: '/dashboard',
     icon: LayoutDashboard,
@@ -35,21 +40,9 @@ export const navRoutes: NavRoute[] = [
     description: 'Model explainability & feature attribution',
   },
   {
-    label: 'Historical Analytics',
-    href: '/history',
-    icon: Database,
-    description: 'Long-term threat trends & archives',
-  },
-  {
     label: 'Scenario Sandbox',
     href: '/sandbox',
     icon: Terminal,
     description: 'Simulated attack scenarios & testing',
-  },
-  {
-    label: 'Research Evaluation',
-    href: '/research',
-    icon: BarChart3,
-    description: 'Model performance & benchmark reports',
   },
 ];

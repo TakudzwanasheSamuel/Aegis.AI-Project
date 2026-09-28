@@ -11,13 +11,26 @@ const STAGES = [
   { label: 'Safe', color: '#10B981', pct: 8 },
 ] as const;
 
-const SHAP_FEATURES = [
-  { name: 'process_handle_count', value: 0.31, dir: 'up' },
-  { name: 'memory_write_rate', value: 0.24, dir: 'up' },
-  { name: 'entropy_spike', value: 0.19, dir: 'up' },
-  { name: 'disk_write_freq', value: -0.12, dir: 'down' },
-  { name: 'api_call_entropy', value: 0.08, dir: 'up' },
-];
+const INDICATORS = [
+  'pslist.nproc',
+  'pslist.nppid',
+  'pslist.avg_threads',
+  'pslist.avg_handlers',
+  'dlllist.ndlls',
+  'dlllist.avg_dlls_per_proc',
+  'handles.nhandles',
+  'handles.avg_handles_per_proc',
+] as const;
+
+function attributionsForStage(stageIdx: number) {
+  const weight = STAGES[stageIdx].pct / 100;
+  return INDICATORS.map((name, index) => {
+    const towardMalware = (index + stageIdx) % 3 !== 0;
+    const magnitude = 0.04 + ((index + 1) % 4) * 0.05 * weight;
+    const value = Number((towardMalware ? magnitude : -magnitude * 0.6).toFixed(2));
+    return { name, value, dir: value >= 0 ? ('up' as const) : ('down' as const) };
+  });
+}
 
 export function HeroThreatCard() {
   const [stageIdx, setStageIdx] = useState(0);
@@ -30,6 +43,7 @@ export function HeroThreatCard() {
   }, []);
 
   const stage = STAGES[stageIdx];
+  const shapFeatures = attributionsForStage(stageIdx);
   const circumference = 2 * Math.PI * 52;
   const dashOffset = circumference - (stage.pct / 100) * circumference;
 
@@ -118,12 +132,12 @@ export function HeroThreatCard() {
               SHAP Feature Attribution
             </span>
           </div>
-          <span className="text-[10px] text-aegis-text-muted">Top 5</span>
+          <span className="text-[10px] text-aegis-text-muted">8 indicators</span>
         </div>
         <div className="mt-3 space-y-2">
-          {SHAP_FEATURES.map((f) => (
+          {shapFeatures.map((f) => (
             <div key={f.name} className="flex items-center gap-2">
-              <span className="w-28 truncate text-[10px] font-mono text-aegis-text-muted">
+              <span className="w-44 shrink-0 truncate text-[10px] font-mono text-aegis-text-muted">
                 {f.name}
               </span>
               <div className="relative h-1.5 flex-1 rounded-full bg-white/[0.04]">
@@ -156,10 +170,10 @@ export function HeroThreatCard() {
       <div className="mt-4 flex items-center justify-between text-[10px] text-aegis-text-muted">
         <span className="flex items-center gap-1">
           <Zap className="h-3 w-3 text-aegis-accent-secondary" />
-          12ms inference
+          Illustrative only
         </span>
         <span>RF + XGBoost ensemble</span>
-        <span>0.8% CPU</span>
+        <span>TreeExplainer</span>
       </div>
     </div>
   );

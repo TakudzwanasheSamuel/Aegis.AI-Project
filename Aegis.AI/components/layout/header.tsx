@@ -150,7 +150,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                       onClick={() => router.push(`/analysis?id=${alert.id}`)}
                       className="flex w-full flex-col items-start rounded-lg px-2 py-2 text-left hover:bg-white/[0.04]"
                     >
-                      <span className="text-xs font-semibold text-aegis-danger">{alert.process_name}</span>
+                      <span className="text-xs font-semibold text-aegis-danger">{alert.snapshot_label}</span>
                       <span className="text-[10px] text-aegis-text-muted">
                         PID {alert.pid} · {alert.risk_score}% · {alert.severity}
                       </span>

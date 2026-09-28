@@ -12,27 +12,20 @@ import {
 } from 'recharts';
 
 export function ClassDistributionChart({
-  preBenign,
-  preMalware,
-  postBenign,
-  postMalware,
+  benign,
+  malware,
 }: {
-  preBenign: number;
-  preMalware: number;
-  postBenign: number;
-  postMalware: number;
+  benign: number;
+  malware: number;
 }) {
-  const data = [
-    { split: 'Pre-SMOTE train', benign: preBenign, malware: preMalware },
-    { split: 'Post-SMOTE train', benign: postBenign, malware: postMalware },
-  ];
+  const data = [{ split: 'CIC-MalMem-2022', benign, malware }];
 
   return (
     <div className="surface-card rounded-card p-5">
       <div>
-        <h3 className="text-sm font-semibold text-aegis-text-primary">Class Distribution — SMOTE</h3>
+        <h3 className="text-sm font-semibold text-aegis-text-primary">Class Distribution</h3>
         <p className="mt-0.5 text-xs text-aegis-text-muted">
-          Training-fold counts from training_metrics.json · CIC-MalMem-2022 is already balanced
+          Benign and malware counts from training_metrics.json
         </p>
       </div>
       <div className="mt-4 h-56">
