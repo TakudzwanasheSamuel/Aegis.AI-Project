@@ -88,7 +88,7 @@ export function DashboardWorkspace() {
         </p>
       )}
 
-      <DashboardStats metrics={metrics} agentConnected={agentConnected} />
+      <DashboardStats latest={recent[0] ?? null} />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-10">
         <div className="lg:col-span-7">

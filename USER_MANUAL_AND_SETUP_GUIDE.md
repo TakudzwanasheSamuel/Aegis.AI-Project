@@ -71,9 +71,9 @@ Inference requires these files under `aegis-backend/app/ml/`:
 |----------|------|
 | `random_forest.pkl` | Ensemble member and SHAP TreeExplainer model |
 | `xgboost.pkl` | Ensemble member |
-| `scaler.pkl` | `StandardScaler` fit on the SMOTE train fold |
+| `scaler.pkl` | Pass-through transform. The shipped `training_metrics.json` records scaler as none |
 | `feature_names.pkl` | Ordered list of the 8 CIC columns |
-| `shap_background.pkl` | 64 scaled background rows for interventional SHAP |
+| `shap_background.pkl` | Background rows for interventional SHAP |
 | `training_metrics.json` | Held-out scores consumed by `GET /api/v1/analytics/research-benchmark` |
 
 **If those files already exist** (they are tracked in this workspace), skip retraining and continue to section 2.3.
@@ -86,7 +86,7 @@ cd "D:\Aegis.AI Project\aegis-backend"
 python train_models.py
 ```
 
-`train_models.py` uses `HARMONIZED_FEATURES` (8 columns), an 80/20 stratified split (`random_state=42`), SMOTE on the train fold, `StandardScaler`, `RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)`, and `XGBClassifier(n_estimators=100, learning_rate=0.1, random_state=42, eval_metric="logloss")`. It overwrites the pickles and `training_metrics.json`.
+`train_models.py` still applies an 80/20 stratified split, SMOTE, and `StandardScaler`, then overwrites the pickles and `training_metrics.json`. The models already in `app/ml/` were saved without scaling. Skip retraining for the demonstration so those artifacts stay as they are.
 
 Optional: recompute confusion / ROC / importance JSON without refitting:
 
@@ -178,20 +178,27 @@ Useful flags:
 
 ```powershell
 python agent/endpoint_agent.py --once
-python agent/endpoint_agent.py --api-url http://127.0.0.1:8000 --interval 3 --max-processes 12
+python agent/endpoint_agent.py --api-url http://127.0.0.1:8000 --interval 3
 ```
 
-Environment overrides: `AEGIS_API_URL`, `AEGIS_AGENT_INTERVAL`, `AEGIS_AGENT_MAX_PROCESSES`.
+Environment overrides: `AEGIS_API_URL`, `AEGIS_AGENT_INTERVAL`.
 
 The agent:
 
-1. Iterates processes with `psutil`, primes `cpu_percent`, sleeps 0.15 s.
-2. Collects `TelemetryPayload` fields (`hostname`, `process_name`, `pid`, `cpu_percent`, `memory_mb`, `thread_count`, `open_handles`, `loaded_modules`).
-3. Skips `AccessDenied`, `NoSuchProcess`, and `ZombieProcess`. Handle and module counts fall back to `0` on those errors.
-4. POSTs JSON to `{api}/api/v1/telemetry/assess` via `urllib` (no `requests` package).
-5. Prints `severity`, `risk_score`, and `prediction` per PID.
+1. Walks accessible processes with `psutil` and skips `AccessDenied`, `NoSuchProcess`, `ZombieProcess`, and `OSError`.
+2. Builds one system-wide snapshot: `hostname`, `snapshot_label` (`SYSTEM_SNAPSHOT`), `accessible_processes`, and the eight process, thread, DLL, and handle counters.
+3. POSTs JSON to `{api}/api/v1/telemetry/assess`.
+4. Prints `severity`, `risk_score`, and `prediction` for that snapshot.
 
 On `/dashboard`, the agent badge reads **Agent Connected / Active Scanning** when `metrics.latest_timestamp` is within 15 seconds.
+
+To show the file-activity detector, start the contained simulator in a fourth window (or use **Start Live Simulation** on `/sandbox`):
+
+```powershell
+python agent/ransomware_simulator.py 30
+```
+
+It only rewrites disposable files inside `aegis-backend/watch_target` and deletes them when it exits.
 
 ---
 
@@ -201,82 +208,69 @@ Keep Uvicorn and Next.js running. Use Chrome or Edge at http://localhost:3000.
 
 ### Scenario 1: Monitor a clean Windows baseline in real time
 
-**Goal:** Show live ingestion of ordinary processes, not ransomware.
+**Goal:** Show live ingestion of ordinary system snapshots.
 
 1. Start `python agent/endpoint_agent.py` (looping, not `--once`).
 2. Open `/dashboard`.
 3. Confirm the header **System Active** / **FastAPI Gateway: Online**.
 4. Confirm the agent badge is connected (latest assessment younger than 15 s).
-5. Watch KPIs (`total_scanned`, `safe_processes`, `avg_risk_score`) increment as `GET /api/v1/telemetry/metrics` and `GET /api/v1/telemetry/recent?limit=20` poll every **3 seconds**.
-6. Expect most rows to be `Safe` / `LOW` (chrome, explorer, typical user processes). A busy compiler or browser can still be Safe: the Feature Harmonization Layer does not treat high CPU alone as ransomware.
+5. Watch Live Telemetry. `GET /api/v1/telemetry/metrics` and `GET /api/v1/telemetry/recent?limit=20` poll every **3 seconds**. A scan line updates every second.
+6. The large status follows the newest row. A normal snapshot reads **Safe**. It switches to **Threat detected** only when that newest row is HIGH or CRITICAL.
 
-**Talking point:** The agent emits `TelemetryPayload`. FastAPI harmonizes to eight CIC columns, scores with the RF + XGBoost mean malware probability, explains with `shap.TreeExplainer` on the Random Forest, and inserts an `AssessmentRecord`.
+**Talking point:** The agent emits one system-wide `TelemetryPayload`. FastAPI copies the eight counters into CIC names, scores them with the RF + XGBoost mean malware probability, explains that score with `shap.TreeExplainer`, and inserts an `AssessmentRecord`.
 
-### Scenario 2: Detonate sandbox high-resource and ransomware payloads
+### Scenario 2: Sandbox presets and the live file simulation
 
-**Goal:** Contrast a legitimate heavy workload with the simulated encryptor. Both use the same `POST /api/v1/telemetry/assess` contract as the agent.
+**Goal:** Contrast a normal snapshot, a busy snapshot, and a memory profile in the malware range. Then start the contained file simulator so the behavioural detector can raise the verdict.
 
 Open `/sandbox`.
 
-#### 2a. High-resource (not ransomware)
+#### 2a. Preset snapshots
 
-1. Select **Scenario 2: Resource Intensive Task** (`ffmpeg.exe`, PID `8821`, high CPU/RAM, moderate handles/threads).
-2. Optionally move sliders, then click **Send Telemetry to FastAPI Gateway**.
-3. Expected outcome: **Safe** / `LOW`. Intensity stays below the 0.55 malfind gate, so `malfind.commitCharge` and `malfind.ninjections` remain on the benign scale.
+1. **Scenario 1** is a normal snapshot. Expected result: Safe, detector **Memory-forensic model**.
+2. **Scenario 2** is a busy machine. Expected result: still Safe. High process and handle counts sit in the benign range of this model.
+3. **Scenario 3** uses lower DLL and handle totals. Expected result: a threat from the memory model.
+4. **Show advanced controls** reveals sliders and file upload. Those controls only post the eight counters. They do not send file-activity fields.
 
-Do **not** present `ffmpeg.exe` as a ransomware hit. That card exists to show that resource pressure is not sufficient for a Critical verdict.
+#### 2b. Live ransomware simulation
 
-#### 2b. Simulated ransomware (`encryptor_sim.exe`)
-
-1. Select **Scenario 3: Simulated Ransomware Behavior**.
-2. Payload defaults: `process_name=encryptor_sim.exe`, `pid=2345`, `cpu_percent=91`, `memory_mb=1984`, `thread_count=192`, `open_handles=1820`, `loaded_modules=118`, `hostname=SANDBOX-VIVA`.
-3. Click **Send Telemetry to FastAPI Gateway**.
-4. Expected outcome: **Critical Threat** / `CRITICAL`, high `risk_score` (typically in the 80 to 100 band), a non-empty `top_shap_features` list, and `harmonized_vector` with eight CIC keys.
-5. Note `telemetry_id` in the JSON. That integer is `AssessmentRecord.id` and is the `?id=` query for `/analysis`.
-
-Optional: Scenario 1 (`chrome.exe`) is a low-intensity Safe control.
+1. Click **Start Live Simulation** (30 seconds), or run `python agent/ransomware_simulator.py 30` while the agent is looping.
+2. The button stays disabled while `GET /api/v1/demo/status` reports `running: true`. A second start returns HTTP 409.
+3. Open `/dashboard` and watch for a row whose detector is the behavioural file-activity monitor.
 
 ### Scenario 3: Investigate the threat on `/analysis`
 
-**Goal:** Bind a persisted row, interpret SHAP, read the automated recommendation.
+**Goal:** Open a persisted row and read the detector that fired.
 
-1. From `/dashboard`, click the `encryptor_sim.exe` row or **Analyze SHAP** (navigates to `/analysis?id={id}`).
-2. Alternatively open `/analysis?id={telemetry_id}` or `/analysis?pid=2345` (PID lookup returns the **latest** row for that PID).
-3. Confirm `ProcessTargetHeader` shows `encryptor_sim.exe`, PID, hostname, `prediction`, `risk_score`, `confidence`.
-4. Read the horizontal SHAP bar chart: each bar is `{ "feature": "<CIC name>", "impact": <float> }` from `top_shap_features`, ranked by absolute impact. Positive impact supports the malware class; negative supports benign.
-5. Read the eight-row feature table: live `psutil` counters versus the harmonized CIC vector (`lib/analysis/harmonization.ts` mirrors backend centroids).
-6. Read `recommendation`. For `CRITICAL` the gateway stores:
+1. From `/dashboard`, click the row (navigates to `/analysis?id={id}`).
+2. Confirm the header shows hostname, verdict, risk, confidence, and **Detected by**.
+3. If the behavioural monitor fired, read **Why this was flagged** (file-activity bullets, level, and score) and the longer recommendation. Open **Memory-model view** only if you want the SHAP chart.
+4. If the memory model fired, read the SHAP bars and the eight-row harmonization table.
+5. State clearly that the recommendation is **decision-support text**. The UI has no isolate, kill, or backup buttons.
 
-   `CRITICAL: Ransomware process pattern detected. Immediate endpoint network isolation recommended.`
-
-7. State clearly that this is **decision-support text**. The UI has no isolate, kill, or backup actions.
-
-Use the **Recent assessments** dropdown to switch `?id=` without leaving the page.
-
-### Scenario 4: Audit history and empirical benchmarks
+### Scenario 4: History and empirical benchmarks
 
 #### 4a. `/history`
 
-1. Open `/history`.
-2. Search `encryptor_sim` (300 ms debounce) or PID `2345`.
-3. Filter severity **Critical** (mapped to API `CRITICAL`).
-4. Use **Last 24 Hours**, **Last 7 Days**, or a custom `since` / `until` range (`until` is the end of the selected day).
-5. Open **View Details** for the persisted SHAP vector.
-6. Page with Previous / Next (`page_size=25`, `total_count` from `HistoryResponse`).
-7. Optionally **Export CSV** or **JSON** of the loaded page.
+The route is still available at `/history` even though it is not in the primary sidebar.
+
+1. Search by snapshot label or hostname.
+2. Filter severity and date range.
+3. Open **View Details** for the stored SHAP vector.
+4. Page with Previous / Next. Optionally export the loaded page.
 
 #### 4b. `/research`
 
 1. Open `/research`.
-2. Confirm the table is loaded from `GET /api/v1/analytics/research-benchmark` (file `app/ml/training_metrics.json`), not from hard-coded slides.
-3. Report held-out scores on 58,596 CIC samples, 8 features, 80/20 split:
+2. Confirm the table is loaded from `GET /api/v1/analytics/research-benchmark` (file `app/ml/training_metrics.json`).
+3. Report held-out scores on 58,062 samples and 8 features:
 
    | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
    |-------|----------|-----------|--------|-----|---------|
-   | Random Forest | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-   | XGBoost | 0.999744 | 0.999829 | 0.999659 | 0.999744 | 0.99999991 |
+   | Random Forest | 0.9995 | 0.9998 | 0.9991 | 0.9995 | 1.0000 |
+   | XGBoost | 0.9996 | 1.0000 | 0.9991 | 0.9996 | 1.0000 |
 
-4. Show confusion matrices, ROC curves, and RF impurity importances.
+4. Show the confusion counts (XGBoost: TN 5847, FP 0, FN 5, TP 5761) and the feature-importance list. There is no ROC curve in the current JSON.
 5. Clarify: these metrics are **dump-row classification** on CIC-MalMem-2022. Live behaviour is a property of the Harmonization Layer plus that model.
 
 ---
@@ -382,13 +376,30 @@ Alternatively call `.\venv\Scripts\python.exe` without activating.
 [3] uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
         -> init_db() -> app/data/aegisai.db
 [4] npm install && npm run dev          (.env.local -> NEXT_PUBLIC_API_URL)
-[5] python agent/endpoint_agent.py      (or /sandbox POST)
-        -> TelemetryPayload
-        -> Feature Harmonization (8 CIC features)
+[5] python agent/endpoint_agent.py
+        -> one SYSTEM_SNAPSHOT
+        -> Feature Harmonization (8 CIC features, pass-through)
         -> Ensemble RF + XGBoost
         -> TreeExplainer SHAP
+        -> combine with behavioural file activity when present
         -> AssessmentRecord
-[6] Browser polls /health, /metrics, /recent, /history, /research-benchmark
+[6] Optional: python agent/ransomware_simulator.py 30
+        or POST /api/v1/demo/simulate-ransomware?duration=30
+[7] Browser polls /health, /metrics, /recent, /history, /research-benchmark
 ```
 
-The system does not isolate endpoints or terminate processes. All operator actions after a Critical verdict are human procedures informed by `recommendation` and `top_shap_features`.
+The system does not isolate endpoints or terminate processes. The analysis page writes an action note for the analyst. The stored recommendation string is still what the API saved at assess time.
+
+
+
+# Terminal 1: restart the backend (must reload the changed code)
+cd "D:\Aegis.AI Project\aegis-backend"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Terminal 2: agent
+cd "D:\Aegis.AI Project\aegis-backend"
+python agent/endpoint_agent.py
+
+# Terminal 3: trigger the attack
+cd "D:\Aegis.AI Project\aegis-backend"
+python agent/ransomware_simulator.py 30

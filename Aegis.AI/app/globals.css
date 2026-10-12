@@ -170,4 +170,54 @@
       transform: translateY(0);
     }
   }
+
+  .animate-scan-sweep {
+    animation: scan-sweep 2.5s linear infinite;
+  }
+  @keyframes scan-sweep {
+    0% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(320%);
+    }
+  }
+
+  .animate-blink-cursor {
+    animation: blink-cursor 1s step-end infinite;
+  }
+  @keyframes blink-cursor {
+    0%,
+    45% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .animate-row-flash {
+    animation: row-flash 1s ease-out;
+  }
+  @keyframes row-flash {
+    0% {
+      background-color: rgba(16, 185, 129, 0.28);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .animate-row-flash-danger {
+    animation: row-flash-danger 1s ease-out;
+  }
+  @keyframes row-flash-danger {
+    0% {
+      background-color: rgba(239, 68, 68, 0.4);
+    }
+    100% {
+      background-color: rgba(239, 68, 68, 0.06);
+    }
+  }
 }

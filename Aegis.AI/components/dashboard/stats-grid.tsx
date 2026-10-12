@@ -2,15 +2,15 @@
 
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 
-import type { MetricsResponse } from '@/lib/api';
+import type { AssessmentRecord } from '@/lib/api';
 
 interface DashboardStatsProps {
-  metrics: MetricsResponse;
-  agentConnected: boolean;
+  latest: AssessmentRecord | null;
 }
 
-export function DashboardStats({ metrics }: DashboardStatsProps) {
-  const threat = metrics.threats_detected > 0;
+export function DashboardStats({ latest }: DashboardStatsProps) {
+  const severity = latest?.severity.toUpperCase() ?? '';
+  const threat = severity === 'HIGH' || severity === 'CRITICAL';
 
   return (
     <div
@@ -45,8 +45,10 @@ export function DashboardStats({ metrics }: DashboardStatsProps) {
           </p>
           <p className="mt-1 text-sm text-aegis-text-secondary">
             {threat
-              ? `${metrics.threats_detected} stored assessment${metrics.threats_detected === 1 ? '' : 's'} need review.`
-              : 'No threat is stored for this endpoint.'}
+              ? `${latest?.snapshot_label ?? 'Latest snapshot'} is flagged in Live Telemetry.`
+              : latest
+                ? 'The latest snapshot in Live Telemetry is safe.'
+                : 'No assessment yet.'}
           </p>
         </div>
       </div>

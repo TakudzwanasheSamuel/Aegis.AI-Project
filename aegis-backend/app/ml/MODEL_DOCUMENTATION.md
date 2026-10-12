@@ -11,16 +11,13 @@ Live scores: `training_metrics.json`
 
 | Property | Value |
 |----------|--------|
-| Corpus | CIC-MalMem-2022 (`Obfuscated-MalMem2022.csv`) |
-| Samples (`n_samples`) | **58,596** |
-| Class balance | **29,298 benign / 29,298 malware** (`class_counts`) |
-| Label column | `Class` (or `Category` / `label` if present) |
-| Positive class | strings containing `Malware` or `Ransomware`, or `"1"` |
-| Operational features | **8** (not the full 55+ dump columns) |
+| Corpus | CIC-MalMem-2022 |
+| Samples (`n_samples`) | **58,062** |
+| Class counts | **29,231 benign / 28,831 malware** (`class_distribution`) |
+| Operational features | **8** system-wide indicators listed in `training_metrics.json` |
+| Scaler recorded with the artifacts | **None** (tree models; the loaded `scaler.pkl` is a pass-through) |
 
-The full CIC dump contains dozens of Volatility-derived columns. AegisAI trains and infers **only** on the eight names that the harmonization layer can populate from live telemetry.
-
-Held-out test size: **0.20**, `random_state=42`, **stratified**. Train fold after split: 23,438 per class. SMOTE is applied (`smote: true`); because the corpus is already balanced, `post_smote_train` equals `pre_smote_train` (23,438 / 23,438).
+These numbers are what `GET /api/v1/analytics/research-benchmark` serves. `train_models.py` still contains an older path (80/20 split, SMOTE, `StandardScaler`). Re-running that script would overwrite the pickles and this JSON. Do not retrain during a demonstration unless that overwrite is intended.
 
 ---
 
@@ -28,74 +25,37 @@ Held-out test size: **0.20**, `random_state=42`, **stratified**. Train fold afte
 
 ### 2.1 Eight-feature operational subset
 
-| Order | CIC column | Forensic meaning (dump-level) |
-|-------|------------|-------------------------------|
-| 1 | `handles.nhandles` | Total handle table size |
-| 2 | `pslist.avg_threads` | Average threads across listed processes |
-| 3 | `dlllist.ndlls` | Loaded module / DLL count |
-| 4 | `malfind.commitCharge` | Suspicious VAD commit charge (injection-like) |
-| 5 | `svcscan.nservices` | Enumerated services |
-| 6 | `ldrmodules.not_in_load` | Modules not in the load list (hiding) |
-| 7 | `handles.nfile` | File-type handles |
-| 8 | `malfind.ninjections` | Count of malfind injection regions |
+| Order | CIC column | Meaning on a live snapshot |
+|-------|------------|----------------------------|
+| 1 | `pslist.nproc` | Process count |
+| 2 | `pslist.nppid` | Parent-process count |
+| 3 | `pslist.avg_threads` | Average threads per process |
+| 4 | `pslist.avg_handlers` | Average handlers per process |
+| 5 | `dlllist.ndlls` | DLL count |
+| 6 | `dlllist.avg_dlls_per_proc` | Average DLLs per process |
+| 7 | `handles.nhandles` | Handle count |
+| 8 | `handles.avg_handles_per_proc` | Average handles per process |
 
-### 2.2 Mapping from `psutil` / WMI-style runtime counters
+### 2.2 Mapping from the agent payload
 
-Live `TelemetryPayload` fields are **per-process**:
+The agent sends one system-wide snapshot. Harmonization copies these payload fields onto the names above. Extra behavioural keys are ignored by the harmonizer.
 
-| Live field | Agent source |
-|------------|----------------|
-| `cpu_percent` | `Process.cpu_percent` |
-| `memory_mb` | `memory_info().rss / 1024^2` |
-| `thread_count` | `num_threads()` |
-| `open_handles` | `num_handles()` (Windows) or `num_fds()` |
-| `loaded_modules` | `len(memory_maps())` |
+| Payload field | CIC name |
+|---------------|----------|
+| `pslist_nproc` | `pslist.nproc` |
+| `pslist_nppid` | `pslist.nppid` |
+| `pslist_avg_threads` | `pslist.avg_threads` |
+| `pslist_avg_handlers` | `pslist.avg_handlers` |
+| `dlllist_ndlls` | `dlllist.ndlls` |
+| `dlllist_avg_dlls_per_proc` | `dlllist.avg_dlls_per_proc` |
+| `handles_nhandles` | `handles.nhandles` |
+| `handles_avg_handles_per_proc` | `handles.avg_handles_per_proc` |
 
-**Intensity** (code: `FeatureHarmonizationService._ransom_intensity`):
+There is no ransom-intensity formula and no interpolation between class centroids.
 
-```
-I = clamp(
-      0.30 * unit(open_handles, 400, 1800)
-    + 0.30 * unit(thread_count, 40, 180)
-    + 0.15 * unit(cpu_percent, 55, 95)
-    + 0.15 * unit(memory_mb, 600, 2000)
-    + 0.10 * unit(loaded_modules, 40, 110)
-  , 0, 1)
-```
+### 2.3 What the trees see
 
-where `unit(x, lo, hi) = clamp((x - lo) / (hi - lo), 0, 1)`.
-
-**Linear interpolation** onto CIC centroids for each feature `f`:
-
-```
-x_f = (1 - I) * BENIGN_f + I * MALWARE_f
-```
-
-Class-conditional centroids (empirical CIC medians used in code):
-
-| Feature | `_BENIGN` | `_MALWARE` |
-|---------|-----------|------------|
-| `handles.nhandles` | 12185.0 | 8414.0 |
-| `pslist.avg_threads` | 12.838 | 9.974 |
-| `dlllist.ndlls` | 2086.0 | 1557.0 |
-| `malfind.commitCharge` | 5.0 | 1928.0 |
-| `svcscan.nservices` | 395.0 | 389.0 |
-| `ldrmodules.not_in_load` | 74.0 | 46.0 |
-| `handles.nfile` | 1079.5 | 646.0 |
-| `malfind.ninjections` | 4.0 | 9.0 |
-
-**Malfind gate:** if `I < 0.55`, `commitCharge = 5 + I*60` and `ninjections = 4 + I*4` (benign-scale). If `I ≥ 0.55`, interpolate from benign toward malware `commitCharge` and toward 24 injections. This keeps sandbox Scenario 2 (high CPU/RAM, moderate handles/threads) inside the Safe region.
-
-### 2.3 Semantic equivalence rationale
-
-Ransomware in the **pre-encryption / cryptographic traversal** phase typically:
-
-- Walks large file sets (handle and file-handle pressure).
-- Spawns worker threads for enumeration or crypto.
-- Touches many modules and private committed pages.
-- In dumps, appears as anomalous `malfind` VADs and handle-table growth.
-
-AegisAI does **not** claim that `open_handles == handles.nhandles`. It claims that **intensity of those user-space counters is a usable proxy** for position on the CIC class manifold, which is what the trees were trained on. Examiners should treat harmonization as a **domain translation layer**, not as Volatility equivalence.
+On this subset, malware rows tend toward lower system-wide DLL and handle totals than benign rows. Sandbox Scenario 3 uses counts in that lower range. A busy machine with high counts (Scenario 2) stays in the benign range of the memory model. File encryption behaviour is a separate signal from the file-activity monitor, not a feature in this table.
 
 ---
 
@@ -103,69 +63,55 @@ AegisAI does **not** claim that `open_handles == handles.nhandles`. It claims th
 
 Executed from `aegis-backend/` with `data/raw/Obfuscated-MalMem2022.csv` present.
 
-| Stage | Setting |
-|-------|---------|
-| Split | `train_test_split(..., test_size=0.2, random_state=42, stratify=y)` |
-| Imbalance | `SMOTE(random_state=42)` on the training fold only |
-| Scale | `StandardScaler` fit on SMOTE-resampled train; applied to test and to live vectors |
-| Random Forest | `RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)` |
-| XGBoost | `XGBClassifier(n_estimators=100, learning_rate=0.1, random_state=42, eval_metric="logloss")` |
-| SHAP background | 64 scaled training rows, `numpy` RNG seed 42, stored as `shap_background.pkl` |
+| Stage | Setting in the shipped artifacts |
+|-------|----------------------------------|
+| Features | The eight names in section 2.1 |
+| Scale | None. Trees are used unscaled |
+| Ensemble | Mean of Random Forest and XGBoost malware probabilities |
+| SHAP | `shap.TreeExplainer` on the Random Forest, interventional background in `shap_background.pkl` |
+
+`train_models.py` still imports SMOTE and `StandardScaler`. The JSON next to the live pickles does not. Treat `training_metrics.json` as the record of the models that are loaded.
 
 **Written artifacts**
 
 | File | Content |
 |------|---------|
-| `random_forest.pkl` | sklearn RF |
+| `random_forest.pkl` | sklearn RF used for the ensemble and for SHAP |
 | `xgboost.pkl` | XGBClassifier |
-| `scaler.pkl` | StandardScaler |
-| `feature_names.pkl` | list of 8 strings |
-| `shap_background.pkl` | `(64, 8)` scaled array |
-| `training_metrics.json` | metrics, confusion, ROC, importances, class counts |
-
-Optional refresh of visual payloads without retraining: `python export_eval_metrics.py`.
+| `scaler.pkl` | Pass-through transform |
+| `feature_names.pkl` | The eight names in section 2.1 |
+| `shap_background.pkl` | Background matrix for TreeExplainer |
+| `training_metrics.json` | Held-out scores, confusion counts, feature importance, class counts |
 
 ---
 
 ## 4. Empirical benchmark performance
 
-Source: `training_metrics.json` (held-out test, 11,720 rows: 5,860 benign + 5,860 malware).
+Source: `training_metrics.json`. Scores are rounded below. The research page reads the same file.
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |-------|----------|-----------|--------|-----|---------|
-| Random Forest | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| XGBoost | 0.999744 | 0.999829 | 0.999659 | 0.999744 | 0.99999991 |
+| Random Forest | 0.9995 | 0.9998 | 0.9991 | 0.9995 | 1.0000 |
+| XGBoost | 0.9996 | 1.0000 | 0.9991 | 0.9996 | 1.0000 |
 
-**Random Forest confusion matrix**
+**Random Forest confusion matrix:** TN 5846, FP 1, FN 5, TP 5761.
 
-|  | Predicted + | Predicted − |
-|--|-------------|-------------|
-| Actual + | TP 5860 | FN 0 |
-| Actual − | FP 0 | TN 5860 |
+**XGBoost confusion matrix:** TN 5847, FP 0, FN 5, TP 5761.
 
-**XGBoost confusion matrix**
-
-|  | Predicted + | Predicted − |
-|--|-------------|-------------|
-| Actual + | TP 5858 | FN 2 |
-| Actual − | FP 1 | TN 5859 |
-
-**Random Forest impurity importance (descending)**
+**Feature importance (descending, from the JSON)**
 
 | Feature | Importance |
 |---------|------------|
-| `svcscan.nservices` | 0.2664 |
-| `dlllist.ndlls` | 0.2515 |
-| `handles.nhandles` | 0.1929 |
-| `ldrmodules.not_in_load` | 0.1318 |
-| `pslist.avg_threads` | 0.1005 |
-| `handles.nfile` | 0.0448 |
-| `malfind.commitCharge` | 0.0103 |
-| `malfind.ninjections` | 0.0018 |
+| `dlllist.avg_dlls_per_proc` | 0.2938 |
+| `handles.avg_handles_per_proc` | 0.2018 |
+| `pslist.avg_handlers` | 0.1782 |
+| `handles.nhandles` | 0.1167 |
+| `pslist.avg_threads` | 0.0997 |
+| `dlllist.ndlls` | 0.0764 |
+| `pslist.nppid` | 0.0278 |
+| `pslist.nproc` | 0.0055 |
 
-These scores describe **CIC dump rows**, not raw `psutil` sliders. Perfect RF separation on eight CIC columns is expected given that subset's class structure; live false-safe or false-critical outcomes are a property of **harmonization**, which is why Scenario 2 is documented as Safe by design.
-
-**Online ensemble:** `malware_probability = clip((P_rf + P_xgb) / 2, 0, 1)`. SHAP is computed on RF only (TreeExplainer compatibility).
+Near-perfect scores describe this CIC subset. Live snapshots are judged separately. The online ensemble is `malware_probability = clip((P_rf + P_xgb) / 2, 0, 1)`. SHAP is computed on the Random Forest only. The final stored severity can be raised by the behavioural file-activity signal.
 
 ---
 
@@ -178,15 +124,15 @@ Class: `SHAPExplainabilityService` (`app/services/shap_service.py`).
 | Algorithm | `shap.TreeExplainer` |
 | Model | Loaded `random_forest.pkl` |
 | Background | `shap_background.pkl`, interventional perturbation |
-| Input | Scaled 8-vector (`PredictionService.scale`) |
+| Input | The eight-feature vector after the pass-through scaler |
 | Class | Malware-class SHAP row (handles list / 2D / 3D TreeExplainer layouts) |
 
 **JSON vector schema** (stored as text on `AssessmentRecord.top_shap_features` and returned as `SHAPImpact[]`):
 
 ```json
 [
-  { "feature": "svcscan.nservices", "impact": 0.250123 },
-  { "feature": "pslist.avg_threads", "impact": 0.096001 }
+  { "feature": "dlllist.avg_dlls_per_proc", "impact": 0.250123 },
+  { "feature": "handles.nhandles", "impact": 0.096001 }
 ]
 ```
 

@@ -127,7 +127,12 @@ export function AnalysisWorkspace() {
           <ProcessTargetHeader record={record} />
           {behavioural ? (
             <>
-              <BehaviouralReasons reasons={record.behavioural_reasons ?? []} />
+              <BehaviouralReasons
+                reasons={record.behavioural_reasons ?? []}
+                level={record.behavioural_level}
+                score={record.behavioural_score}
+                recommendation={record.recommendation}
+              />
               <div className="surface-card rounded-card p-6">
                 <button
                   type="button"
@@ -158,8 +163,8 @@ export function AnalysisWorkspace() {
             <FeatureHarmonizationTable record={record} />
           )}
           <RecommendationBanner
-            recommendation={record.recommendation}
             severity={record.severity}
+            triggeredBy={record.triggered_by}
           />
         </div>
       )}

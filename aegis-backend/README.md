@@ -17,13 +17,15 @@ Uvicorn 127.0.0.1:8000
   ├── GET  /health
   ├── GET  /api/v1/health
   ├── router telemetry  prefix=/api/v1/telemetry
-  └── router analytics  prefix=/api/v1/analytics
+  ├── router analytics  prefix=/api/v1/analytics
+  └── router demo       prefix=/api/v1/demo
 
 POST /assess pipeline
-  TelemetryPayload
-    → FeatureHarmonizationService.harmonize
-    → PredictionService.predict          # mean(RF, XGB) P(malware)
-    → SHAPExplainabilityService          # TreeExplainer on RF
+  TelemetryPayload (system-wide counters + optional file-activity fields)
+    → FeatureHarmonizationService.harmonize   # rename to the 8 CIC names
+    → PredictionService.predict                # mean(RF, XGB) P(malware)
+    → SHAPExplainabilityService                # TreeExplainer on RF
+    → _combine_verdicts                        # more severe of model and behavioural
     → AssessmentRecord insert
     → AssessmentResponse
 ```
@@ -47,33 +49,58 @@ Primary ingestion and inference route.
 | Field | Type | Required | Example |
 |-------|------|----------|---------|
 | `hostname` | string | yes | `DESKTOP-MSU-LAB01` |
-| `process_name` | string | yes | `encryptor_sim.exe` |
-| `pid` | int | yes | `4032` |
-| `cpu_percent` | float | yes | `84.5` |
-| `memory_mb` | float | yes | `512.0` |
-| `thread_count` | int | yes | `128` |
-| `open_handles` | int | yes | `850` |
-| `loaded_modules` | int | yes | `45` |
-| `timestamp` | string | no | ISO-8601 UTC (default now) |
+| `snapshot_label` | string | yes | `SYSTEM_SNAPSHOT` |
+| `accessible_processes` | int | yes | `120` |
+| `pslist_nproc` | int | yes | `140` |
+| `pslist_nppid` | int | yes | `48` |
+| `pslist_avg_threads` | float | yes | `12.4` |
+| `pslist_avg_handlers` | float | yes | `248.0` |
+| `dlllist_ndlls` | int | yes | `2100` |
+| `dlllist_avg_dlls_per_proc` | float | yes | `46.5` |
+| `handles_nhandles` | int | yes | `12000` |
+| `handles_avg_handles_per_proc` | float | yes | `260.0` |
+| `pid` | int | no | `0` (stored when omitted) |
+| `behavioural_level` | string | no | `SAFE`, `MEDIUM`, `HIGH`, or `CRITICAL` |
+| `behavioural_score` | int | no | `95` |
+| `behavioural_reasons` | string[] | no | rename and rewrite notes |
+| `modify_rate`, `rename_rate` | float | no | file-activity rates |
+| `suspicious_renames` | int | no | count in the monitor window |
+| `timestamp` | string | no | ISO-8601 (default now) |
+
+`snapshot_label` is stored in the existing `process_name` column. Per-process columns (`cpu_percent`, `memory_mb`, `thread_count`, `open_handles`, `loaded_modules`) are left null.
 
 **Success:** `200` `AssessmentResponse`
 
 | Field | Type | Notes |
 |-------|------|--------|
 | `telemetry_id` | int | SQLite `AssessmentRecord.id` |
-| `process_name`, `pid`, `hostname` | | Echo of input |
-| `prediction` | string | `Safe` \| `Moderate Risk` \| `High Risk` \| `Critical Threat` |
-| `confidence` | float | Probability of the predicted class, 4 d.p. |
-| `risk_score` | int | `round(ensemble_P_malware * 100)` |
-| `severity` | string | `LOW` \| `MEDIUM` \| `HIGH` \| `CRITICAL` |
-| `top_shap_features` | `SHAPImpact[]` | `{ feature, impact }`, ranked by `abs(impact)` |
-| `harmonized_vector` | object | Eight CIC keys → float |
-| `recommendation` | string | Severity-conditioned analyst text |
-| `timestamp` | string | ISO UTC of persist |
+| `snapshot_label`, `pid`, `hostname` | | Echo of input. `pid` is 0 for system snapshots |
+| `prediction` | string | Model label, or a threat label when the behavioural monitor wins |
+| `confidence` | float | Memory-model confidence |
+| `risk_score` | int | Final score after combining the two signals |
+| `severity` | string | Final severity: `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` |
+| `model_severity`, `model_risk_score` | | Memory-model result before the combine step |
+| `behavioural_level`, `behavioural_score`, `behavioural_reasons` | | File-activity signal from this request |
+| `triggered_by` | string | `memory_model` or `behavioural` |
+| `top_shap_features` | `SHAPImpact[]` | `{ feature, impact }` for the memory model |
+| `harmonized_vector` | object | Eight CIC keys. Stored JSON also holds `__behavioural_*` markers |
+| `recommendation` | string | Text written at assess time. The analysis page replaces the display with a shorter action note |
+| `timestamp` | string | ISO time of persist |
 
 **Error:** `500` `{ "detail": "<exception>" }` if harmonize/predict/SHAP/DB fails. `422` on Pydantic validation failure.
 
-**Severity bands** (`PredictionService`): risk ≥ 80 CRITICAL, ≥ 60 HIGH, ≥ 30 MEDIUM, else LOW.
+**Severity bands** (`PredictionService`): risk ≥ 80 CRITICAL, ≥ 60 HIGH, ≥ 30 MEDIUM, else LOW. The behavioural level `SAFE` maps to `LOW`. The stored severity is the higher of the two ranks.
+
+### 2.1.1 Demo control
+
+Local demonstration only.
+
+| Method | Path | Result |
+|--------|------|--------|
+| `POST` | `/api/v1/demo/simulate-ransomware?duration=30` | Starts `agent/ransomware_simulator.py`. Duration is clamped to 5..120 seconds. `409` if one is already running |
+| `GET` | `/api/v1/demo/status` | `{ "running": true/false }` |
+
+The simulator writes only under `aegis-backend/watch_target`, uses a reversible byte flip rather than encryption, and deletes those files on exit.
 
 ---
 
@@ -186,57 +213,50 @@ File: `app/data/aegisai.db`
 | `id` | Integer PK autoincrement | PK | Returned as `telemetry_id` / `AssessmentRecordOut.id` |
 | `timestamp` | DateTime | yes | Naive UTC at insert |
 | `hostname` | String(255) | yes | |
-| `process_name` | String(255) | yes | |
-| `pid` | Integer | yes | |
+| `process_name` | String(255) | yes | Stores `snapshot_label` |
+| `pid` | Integer | yes | `0` for system snapshots |
 | `prediction` | String(64) | | Human label |
 | `confidence` | Float | | |
 | `risk_score` | Integer | | 0..100 |
 | `severity` | String(32) | yes | LOW/MEDIUM/HIGH/CRITICAL |
 | `top_shap_features` | Text | | JSON array of `{feature, impact}` |
 | `recommendation` | Text | | |
-| `harmonized_vector` | Text nullable | | JSON object of 8 CIC floats |
-| `cpu_percent` | Float nullable | | Raw telemetry |
-| `memory_mb` | Float nullable | | |
-| `thread_count` | Integer nullable | | |
-| `open_handles` | Integer nullable | | |
-| `loaded_modules` | Integer nullable | | |
+| `harmonized_vector` | Text nullable | | Eight CIC floats plus `__behavioural_*` markers |
+| `cpu_percent` | Float nullable | | Unused by the system-wide agent |
+| `memory_mb` | Float nullable | | Unused |
+| `thread_count` | Integer nullable | | Unused |
+| `open_handles` | Integer nullable | | Unused |
+| `loaded_modules` | Integer nullable | | Unused |
 
-If `harmonized_vector` is null on read, `serialize_record` recomputes it from stored psutil columns.
+If older rows have a null `harmonized_vector`, the API still returns the stored assessment fields. New rows always persist the eight-feature object plus the behavioural markers.
 
 ---
 
 ## 4. Endpoint agent (`agent/endpoint_agent.py`)
 
-Lightweight collector. **No `requests` dependency**; uses `urllib.request`.
+Lightweight collector. **No `requests` dependency**; uses `urllib.request`. One POST per cycle.
 
 | Item | Default |
 |------|---------|
 | API | `AEGIS_API_URL` or `http://127.0.0.1:8000` |
 | Interval | `AEGIS_AGENT_INTERVAL` or `3` seconds |
-| Max processes | `AEGIS_AGENT_MAX_PROCESSES` or `12` (highest CPU then memory) |
+| Snapshot label | `SYSTEM_SNAPSHOT` |
 
 **Collection**
 
-1. `psutil.process_iter`: prime `cpu_percent(interval=None)`.
-2. Sleep 0.15 s.
-3. Per process `oneshot()`: `name`, `pid`, `cpu_percent`, `memory_info().rss` → `memory_mb`, `num_threads`, handles, modules.
-4. POST each snapshot to `/api/v1/telemetry/assess`.
+1. Walk accessible processes and skip `AccessDenied`, `NoSuchProcess`, `ZombieProcess`, and `OSError`.
+2. Aggregate process, thread, DLL, and handle totals into the eight payload counters.
+3. POST one snapshot to `/api/v1/telemetry/assess`.
 
-**Exception handling**
-
-| Source | Exceptions swallowed / skipped |
-|--------|--------------------------------|
-| `memory_maps()` | `AccessDenied`, `NoSuchProcess`, `ZombieProcess`, `OSError` → `loaded_modules = 0` |
-| `num_handles()` / `num_fds()` | same plus `AttributeError` → `open_handles = 0` |
-| `collect_process_payload` | `AccessDenied`, `NoSuchProcess`, `ZombieProcess` → skip process |
-| POST | `HTTPError` logged; `URLError` stops the loop ("Gateway unreachable") |
+The file-activity monitor can add `behavioural_level`, `behavioural_score`, and `behavioural_reasons` on that same payload. `agent/ransomware_simulator.py` is the contained demo that produces those file events. It writes only inside `watch_target`.
 
 **CLI**
 
 ```bash
 python agent/endpoint_agent.py
 python agent/endpoint_agent.py --once
-python agent/endpoint_agent.py --api-url http://127.0.0.1:8000 --interval 3 --max-processes 12
+python agent/endpoint_agent.py --api-url http://127.0.0.1:8000 --interval 3
+python agent/ransomware_simulator.py 30
 ```
 
-Run from `aegis-backend/` so `app` imports are not required (the agent is standalone).
+Run from `aegis-backend/`.

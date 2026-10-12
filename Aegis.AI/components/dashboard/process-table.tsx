@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Search } from 'lucide-react';
@@ -45,9 +45,56 @@ interface ProcessTableProps {
   updatedAt: Date | null;
 }
 
+interface TelemetryLog {
+  id: number;
+  text: string;
+  tone: 'safe' | 'warning' | 'danger';
+}
+
 export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [now, setNow] = useState(() => new Date());
+  const [logs, setLogs] = useState<TelemetryLog[]>([]);
+  const [flashId, setFlashId] = useState<number | null>(null);
+  const seenId = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const latest = records[0];
+    if (!latest) return;
+    if (seenId.current === null) {
+      seenId.current = latest.id;
+      return;
+    }
+    if (latest.id === seenId.current) return;
+
+    seenId.current = latest.id;
+    const status = statusFromSeverity(latest.severity);
+    const stamp = new Date(latest.timestamp);
+    const time = Number.isNaN(stamp.getTime())
+      ? new Date().toLocaleTimeString()
+      : stamp.toLocaleTimeString();
+    const tone = status === 'High Risk' ? 'danger' : status === 'Warning' ? 'warning' : 'safe';
+
+    setLogs((current) =>
+      [
+        {
+          id: latest.id,
+          tone,
+          text: `${time}  ${latest.snapshot_label}  ${latest.hostname}  ${status}  ${latest.risk_score}%`,
+        },
+        ...current,
+      ].slice(0, 8),
+    );
+    setFlashId(latest.id);
+    const timer = window.setTimeout(() => setFlashId(null), 1000);
+    return () => window.clearTimeout(timer);
+  }, [records]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -59,25 +106,54 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
     );
   }, [query, records]);
 
+  const hostname = records[0]?.hostname ?? 'endpoint';
+  const scanLine = `${now.toLocaleTimeString()}  scanning  ${hostname}  no new snapshot`;
+
   return (
     <div className="surface-card rounded-card overflow-hidden">
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
-        <div>
-          <h3 className="text-sm font-semibold text-aegis-text-primary">Live Telemetry</h3>
-          <p className="mt-0.5 text-xs text-aegis-text-muted">
-            {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()}` : 'Waiting for the first update'}
+      <div className="relative border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <h3 className="text-sm font-semibold text-aegis-text-primary">Live Telemetry</h3>
+            <p className="mt-0.5 text-xs text-aegis-text-muted">
+              {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()}` : 'Waiting for the first update'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
+            <Search className="h-3.5 w-3.5 text-aegis-text-muted" />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Filter snapshots..."
+              className="w-32 bg-transparent text-xs text-aegis-text-secondary placeholder:text-aegis-text-muted focus:outline-none"
+            />
+          </div>
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
+          <div className="animate-scan-sweep h-full w-1/3 bg-gradient-to-r from-transparent via-aegis-accent-secondary to-transparent" />
+        </div>
+      </div>
+
+      <div className="border-b border-white/[0.06] bg-[#0A0C10] px-4 py-3 font-mono text-[11px] leading-5">
+        <p className="text-aegis-accent-secondary">
+          {scanLine}
+          <span className="animate-blink-cursor ml-1 text-aegis-text-primary">▌</span>
+        </p>
+        {logs.map((entry) => (
+          <p
+            key={entry.id}
+            className={
+              entry.tone === 'danger'
+                ? 'text-aegis-danger'
+                : entry.tone === 'warning'
+                  ? 'text-aegis-warning'
+                  : 'text-aegis-success'
+            }
+          >
+            {entry.text}
           </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
-          <Search className="h-3.5 w-3.5 text-aegis-text-muted" />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter snapshots..."
-            className="w-32 bg-transparent text-xs text-aegis-text-secondary placeholder:text-aegis-text-muted focus:outline-none"
-          />
-        </div>
+        ))}
       </div>
 
       <div className="overflow-x-auto">
@@ -106,8 +182,14 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
                   <tr
                     key={record.id}
                     onClick={() => router.push(`/analysis?id=${record.id}`)}
-                    className={`group cursor-pointer border-b border-white/[0.04] transition-all duration-300 hover:bg-white/[0.04] ${
-                      isHighRisk ? 'bg-aegis-danger/[0.06]' : ''
+                    className={`group cursor-pointer border-b border-white/[0.04] transition-colors duration-300 hover:bg-white/[0.04] ${
+                      flashId === record.id
+                        ? isHighRisk
+                          ? 'animate-row-flash-danger'
+                          : 'animate-row-flash'
+                        : isHighRisk
+                          ? 'bg-aegis-danger/[0.06]'
+                          : ''
                     }`}
                   >
                     <td className="px-4 py-3">
