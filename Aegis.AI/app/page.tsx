@@ -427,7 +427,7 @@ export default function LandingPage() {
               <div className="flex items-start gap-2">
                 <Microscope className="mt-0.5 h-4 w-4 shrink-0 text-aegis-accent-secondary" />
                 <p className="text-xs leading-relaxed text-aegis-text-muted">
-                  BSc Honours Dissertation — 2025 Academic Year
+                  BSc Honours Dissertation — 2026 Academic Year
                 </p>
               </div>
               <div className="flex items-start gap-2">
@@ -443,7 +443,7 @@ export default function LandingPage() {
         {/* Bottom bar */}
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] py-6 sm:flex-row">
           <p className="text-[11px] text-aegis-text-muted">
-            © 2025 AegisAI · Midlands State University Data Science Research
+            © 2026 AegisAI · Midlands State University Data Science Research
           </p>
           <p className="text-[11px] text-aegis-text-muted">
             Built in accordance with MSU dissertation guidelines
