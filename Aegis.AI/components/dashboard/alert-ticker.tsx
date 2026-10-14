@@ -49,7 +49,7 @@ export function AlertTicker({ records }: AlertTickerProps) {
                     {alert.triggered_by && (
                       <span className="shrink-0 text-[10px] font-medium text-aegis-text-muted">
                         {alert.triggered_by === 'behavioural'
-                          ? 'Behavioural file-activity detector'
+                          ? 'File-Activity Monitor'
                           : 'Memory-forensic model'}
                       </span>
                     )}

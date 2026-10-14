@@ -217,7 +217,7 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
                         {record.triggered_by && (
                           <span className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium text-aegis-text-muted">
                             {record.triggered_by === 'behavioural'
-                              ? 'Behavioural file-activity detector'
+                              ? 'File-Activity Monitor'
                               : 'Memory-forensic model'}
                           </span>
                         )}

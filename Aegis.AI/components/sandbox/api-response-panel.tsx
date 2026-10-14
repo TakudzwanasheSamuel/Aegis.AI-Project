@@ -60,7 +60,7 @@ export function ApiResponsePanel({ response, loading }: ApiResponsePanelProps) {
               label="Detector"
               value={
                 assessment.triggered_by === 'behavioural'
-                  ? 'Behavioural monitor'
+                  ? 'File-Activity Monitor'
                   : 'Memory-forensic model'
               }
               tone={assessment.triggered_by === 'behavioural' ? 'danger' : 'info'}

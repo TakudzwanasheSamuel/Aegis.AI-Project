@@ -23,7 +23,7 @@ export function ProcessTargetHeader({ record }: { record: AssessmentRecord }) {
   ];
   const detector =
     record.triggered_by === 'behavioural'
-      ? 'Detected by: Behavioural file-activity monitor'
+      ? 'Detected by: File-Activity Monitor'
       : 'Detected by: Memory-forensic model';
 
   return (
