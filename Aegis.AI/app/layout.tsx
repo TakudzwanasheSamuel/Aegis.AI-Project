@@ -7,6 +7,7 @@ import { AppShell } from '@/components/layout/app-shell';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:3000'),
   title: 'AegisAI — Explainable Cybersecurity Threat Analytics',
   description:
     'Enterprise-grade explainable AI platform for real-time threat detection, SHAP-based model interpretability, and security analytics.',
