@@ -79,7 +79,8 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
     const time = Number.isNaN(stamp.getTime())
       ? new Date().toLocaleTimeString()
       : stamp.toLocaleTimeString();
-    const tone = status === 'High Risk' ? 'danger' : status === 'Warning' ? 'warning' : 'safe';
+    const tone: TelemetryLog['tone'] =
+      status === 'High Risk' ? 'danger' : status === 'Warning' ? 'warning' : 'safe';
 
     setLogs((current) =>
       [
