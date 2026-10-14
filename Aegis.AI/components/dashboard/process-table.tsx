@@ -54,12 +54,13 @@ interface TelemetryLog {
 export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [logs, setLogs] = useState<TelemetryLog[]>([]);
   const [flashId, setFlashId] = useState<number | null>(null);
   const seenId = useRef<number | null>(null);
 
   useEffect(() => {
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -108,7 +109,9 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
   }, [query, records]);
 
   const hostname = records[0]?.hostname ?? 'endpoint';
-  const scanLine = `${now.toLocaleTimeString()}  scanning  ${hostname}  no new snapshot`;
+  const scanLine = now
+    ? `${now.toLocaleTimeString()}  scanning  ${hostname}  no new snapshot`
+    : `scanning  ${hostname}  no new snapshot`;
 
   return (
     <div className="surface-card rounded-card overflow-hidden">
