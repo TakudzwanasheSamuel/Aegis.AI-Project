@@ -5,6 +5,7 @@
 .pnp.js
 /coverage
 /.next/
+/.next-build/
 /out/
 /build
 .DS_Store

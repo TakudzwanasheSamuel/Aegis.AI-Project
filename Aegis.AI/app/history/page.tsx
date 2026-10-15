@@ -8,7 +8,7 @@ export default function HistoryPage() {
       <PageHeader
         title="Historical Analytics"
         subtitle="Long-term threat trends, persisted incident logs, and archived SHAP audit trails."
-        icon={<Database className="h-6 w-6 text-aegis-accent-secondary" />}
+        icon={<Database />}
       />
 
       <HistoryAnalytics />

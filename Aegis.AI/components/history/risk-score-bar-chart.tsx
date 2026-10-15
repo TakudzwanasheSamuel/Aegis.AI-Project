@@ -1,84 +1,79 @@
 'use client';
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { ChartLegend, useChartKit } from '@/components/charts/chart-kit';
+import { Panel } from '@/components/ui-aegis';
 import type { RiskScoreComparisonPoint } from '@/lib/history/types';
+import { SEVERITY_CLASSES, severityLevel } from '@/lib/severity';
 
 interface RiskScoreBarChartProps {
   data: RiskScoreComparisonPoint[];
 }
 
+// Each stacked series is one severity band: benign = Safe, malicious = High.
+const BENIGN_LEVEL = severityLevel('Safe');
+const MALICIOUS_LEVEL = severityLevel('High');
+
 export function RiskScoreBarChart({ data }: RiskScoreBarChartProps) {
+  const kit = useChartKit();
+  const levelColor = { safe: kit.colors.safe, moderate: kit.colors.moderate, high: kit.colors.high, critical: kit.colors.critical };
+
   return (
-    <div className="surface-card rounded-card p-5">
-      <div>
-        <h3 className="text-sm font-semibold text-aegis-text-primary">
-          Average Risk Score by Detection Type
-        </h3>
-        <p className="mt-0.5 text-xs text-aegis-text-muted">
-          Stacked comparison · benign vs. malicious process detections
-        </p>
-      </div>
-      <div className="mt-4 h-56">
+    <Panel
+      title="Average Risk Score by Detection Type"
+      description="Stacked comparison · benign vs. malicious process detections"
+      meta={
+        <ChartLegend
+          items={[
+            { label: 'Benign', swatchClassName: SEVERITY_CLASSES[BENIGN_LEVEL].bg },
+            { label: 'Malicious', swatchClassName: SEVERITY_CLASSES[MALICIOUS_LEVEL].bg },
+          ]}
+        />
+      }
+    >
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
-              axisLine={false}
-              tickLine={false}
-            />
+          <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...kit.grid} />
+            <XAxis dataKey="label" tick={kit.tick} axisLine={kit.axisLine} tickLine={false} />
             <YAxis
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
+              tick={kit.numericTick}
               axisLine={false}
               tickLine={false}
               domain={[0, 100]}
+              width={36}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: '#181A20',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#F8FAFC',
-              }}
-              labelStyle={{ color: '#94A3B8' }}
+              {...kit.tooltip}
               formatter={(value: number, name: string) => [
                 `${value.toFixed(1)} avg risk`,
                 name === 'benign' ? 'Benign' : 'Malicious',
               ]}
             />
-            <Legend
-              wrapperStyle={{ fontSize: '11px', color: '#94A3B8' }}
-              formatter={(value) => (value === 'benign' ? 'Benign' : 'Malicious')}
-            />
             <Bar
               dataKey="benign"
               stackId="risk"
-              fill="#10B981"
+              fill={levelColor[BENIGN_LEVEL]}
               radius={[0, 0, 0, 0]}
               name="benign"
+              maxBarSize={48}
+              isAnimationActive={kit.animate}
+              animationDuration={kit.duration}
             />
             <Bar
               dataKey="malicious"
               stackId="risk"
-              fill="#EF4444"
-              radius={[4, 4, 0, 0]}
+              fill={levelColor[MALICIOUS_LEVEL]}
+              radius={[2, 2, 0, 0]}
               name="malicious"
+              maxBarSize={48}
+              isAnimationActive={kit.animate}
+              animationDuration={kit.duration}
             />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -1,5 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
 
+import { Panel, PanelTitle } from '@/components/ui-aegis';
+import { SEVERITY_CLASSES, severityLevel } from '@/lib/severity';
 import { cn } from '@/lib/utils';
 
 export function RecommendationBanner({
@@ -29,47 +31,15 @@ export function RecommendationBanner({
       'This snapshot sits outside the normal baseline, but it is not classified as a high-severity threat. Keep the host under observation, compare the next assessments with this one, and investigate only if the score rises or file activity becomes suspicious.';
   }
 
+  const palette = SEVERITY_CLASSES[severityLevel(severity)];
+
   return (
-    <div>
-      <div
-        className={cn(
-          'flex items-start gap-3 rounded-card border p-5',
-          isThreat
-            ? 'border-aegis-danger/25 bg-aegis-danger/[0.08]'
-            : isCaution
-              ? 'border-aegis-warning/25 bg-aegis-warning/[0.08]'
-              : 'border-aegis-success/25 bg-aegis-success/[0.08]',
-        )}
-      >
-        <div
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border',
-            isThreat
-              ? 'border-aegis-danger/20 bg-aegis-danger/10'
-              : isCaution
-                ? 'border-aegis-warning/20 bg-aegis-warning/10'
-                : 'border-aegis-success/20 bg-aegis-success/10',
-          )}
-        >
-          <ShieldCheck
-            className={cn(
-              'h-4.5 w-4.5',
-              isThreat ? 'text-aegis-danger' : isCaution ? 'text-aegis-warning' : 'text-aegis-success',
-            )}
-          />
-        </div>
-        <div>
-          <p
-            className={cn(
-              'text-xs font-semibold uppercase tracking-wider',
-              isThreat ? 'text-aegis-danger' : isCaution ? 'text-aegis-warning' : 'text-aegis-success',
-            )}
-          >
-            Analyst recommendation
-          </p>
-          <p className="mt-1.5 text-sm leading-relaxed text-aegis-text-secondary">{recommendation}</p>
-        </div>
+    <Panel as="div" accentClassName={palette.leftRule}>
+      <div className="flex items-center gap-2">
+        <ShieldCheck className={cn('h-4 w-4 shrink-0', palette.text)} aria-hidden="true" />
+        <PanelTitle>Analyst recommendation</PanelTitle>
       </div>
-    </div>
+      <p className="mt-2 max-w-[75ch] text-sm leading-relaxed text-aegis-ink-2">{recommendation}</p>
+    </Panel>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 import { ApiResponsePanel } from '@/components/sandbox/api-response-panel';
 import { LiveSimulationCard } from '@/components/sandbox/live-simulation-card';
@@ -13,6 +14,7 @@ import {
 } from '@/lib/sandbox/inference';
 import { SANDBOX_SCENARIOS } from '@/lib/sandbox/scenarios';
 import type { FastApiResponse, SandboxScenario, TelemetryPayload } from '@/lib/sandbox/types';
+import { cn } from '@/lib/utils';
 import { DEFAULT_TELEMETRY } from '@/lib/sandbox/types';
 
 interface SandboxWorkspaceProps {
@@ -28,6 +30,7 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const reset = useCallback(() => {
     setTelemetry(DEFAULT_TELEMETRY);
@@ -67,6 +70,13 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
         setResponse(result);
         setTelemetry(payload);
         setActiveScenarioId(options?.scenario?.id ?? null);
+        // On stacked (mobile/tablet) layouts, bring the verdict into view.
+        if (!result.error && window.matchMedia('(max-width: 1279px)').matches) {
+          const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.requestAnimationFrame(() =>
+            resultRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }),
+          );
+        }
       } finally {
         setLoadingScenarioId(null);
         setSending(false);
@@ -102,45 +112,63 @@ export function SandboxWorkspace({ onResetReady }: SandboxWorkspaceProps) {
   };
 
   const isLoading = sending || loadingScenarioId !== null || uploading;
+  const activeScenario = SANDBOX_SCENARIOS.find((scenario) => scenario.id === activeScenarioId);
 
   return (
-    <div className="space-y-6">
-      <LiveSimulationCard />
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+      {/* Input */}
+      <div className="min-w-0 space-y-6">
+        <ScenarioSelector
+          scenarios={SANDBOX_SCENARIOS}
+          activeScenarioId={activeScenarioId}
+          loadingScenarioId={loadingScenarioId}
+          onLoadScenario={handleLoadScenario}
+        />
 
-      <ScenarioSelector
-        scenarios={SANDBOX_SCENARIOS}
-        activeScenarioId={activeScenarioId}
-        loadingScenarioId={loadingScenarioId}
-        onLoadScenario={handleLoadScenario}
-      />
-
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowAdvanced((open) => !open)}
-          className="text-sm font-medium text-aegis-text-secondary underline-offset-2 hover:text-aegis-text-primary hover:underline"
-        >
-          {showAdvanced ? 'Hide advanced controls' : 'Show advanced controls'}
-        </button>
-        {showAdvanced && (
-          <div className="mt-4 space-y-4">
-            <TelemetrySliders
-              telemetry={telemetry}
-              onChange={setTelemetry}
-              onSend={handleSendManual}
-              sending={sending}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((open) => !open)}
+            aria-expanded={showAdvanced}
+            aria-controls="sandbox-advanced-controls"
+            className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-aegis-ink-2 underline-offset-4 hover:text-aegis-ink hover:underline"
+          >
+            {showAdvanced ? 'Hide advanced controls' : 'Show advanced controls'}
+            <ChevronDown
+              className={cn('h-4 w-4 transition-transform motion-reduce:transition-none', showAdvanced && 'rotate-180')}
+              aria-hidden="true"
             />
-            <TelemetryUpload
-              onFileLoaded={handleFileLoaded}
-              uploading={uploading}
-              error={uploadError}
-              onClearError={() => setUploadError(null)}
-            />
-          </div>
-        )}
+          </button>
+          {showAdvanced && (
+            <div id="sandbox-advanced-controls" className="mt-4 space-y-6">
+              <TelemetrySliders
+                telemetry={telemetry}
+                onChange={setTelemetry}
+                onSend={handleSendManual}
+                sending={sending}
+                onResetToScenario={
+                  activeScenario ? () => setTelemetry(activeScenario.telemetry) : undefined
+                }
+              />
+              <TelemetryUpload
+                onFileLoaded={handleFileLoaded}
+                uploading={uploading}
+                error={uploadError}
+                onClearError={() => setUploadError(null)}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      <ApiResponsePanel response={response} loading={isLoading} />
+      {/* Result: sticky beside the inputs on wide screens */}
+      <div
+        ref={resultRef}
+        className="min-w-0 scroll-mt-20 space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pb-1"
+      >
+        <LiveSimulationCard />
+        <ApiResponsePanel response={response} loading={isLoading} />
+      </div>
     </div>
   );
 }

@@ -1,15 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ShieldCheck, Activity, Zap, TrendingDown } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
+import { RiskGauge } from '@/components/ui-aegis/risk-gauge';
+import { EASE } from '@/lib/motion';
+import { cn } from '@/lib/utils';
+
+// Five illustrative stages drawn from the four-step severity palette.
 const STAGES = [
-  { label: 'Critical', color: '#DC2626', pct: 92 },
-  { label: 'High', color: '#EF4444', pct: 78 },
-  { label: 'Elevated', color: '#F59E0B', pct: 58 },
-  { label: 'Moderate', color: '#3B82F6', pct: 38 },
-  { label: 'Safe', color: '#10B981', pct: 8 },
+  { label: 'Critical', pct: 92, text: 'text-aegis-critical' },
+  { label: 'High', pct: 78, text: 'text-aegis-high' },
+  { label: 'Elevated', pct: 58, text: 'text-aegis-moderate' },
+  { label: 'Moderate', pct: 38, text: 'text-aegis-moderate' },
+  { label: 'Safe', pct: 8, text: 'text-aegis-safe' },
 ] as const;
+
+const DEFAULT_STAGE = 1; // High, 78
 
 const INDICATORS = [
   'pslist.nproc',
@@ -32,149 +39,109 @@ function attributionsForStage(stageIdx: number) {
   });
 }
 
-export function HeroThreatCard() {
-  const [stageIdx, setStageIdx] = useState(0);
+// |SHAP| of 0.2 fills one half of the track.
+const HALF_TRACK_VALUE = 0.2;
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setStageIdx((prev) => (prev + 1) % STAGES.length);
-    }, 2200);
-    return () => clearInterval(id);
-  }, []);
+export function HeroThreatCard() {
+  const [stageIdx, setStageIdx] = useState(DEFAULT_STAGE);
 
   const stage = STAGES[stageIdx];
   const shapFeatures = attributionsForStage(stageIdx);
-  const circumference = 2 * Math.PI * 52;
-  const dashOffset = circumference - (stage.pct / 100) * circumference;
 
   return (
-    <div className="glass-panel relative w-full max-w-md rounded-card p-6 shadow-glow-primary">
-      {/* Floating accent */}
-      <div className="pointer-events-none absolute -top-px left-1/2 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-aegis-accent-secondary/50 to-transparent" />
-
+    <figure className="w-full max-w-md rounded-md border border-aegis-rule bg-aegis-surface">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aegis-success opacity-60" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-aegis-success" />
-          </span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-aegis-text-secondary">
-            Illustrative Risk Gauge
-          </span>
-        </div>
-        <span className="text-[10px] font-medium text-aegis-text-muted">
-          8-feature RF + XGBoost
-        </span>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-aegis-rule px-5 py-3">
+        <span className="text-sm font-semibold text-aegis-ink">Illustrative Risk Gauge</span>
+        <span className="font-mono text-xs text-aegis-muted">8-feature RF + XGBoost</span>
       </div>
 
-      {/* Gauge */}
-      <div className="mt-6 flex flex-col items-center">
-        <div className="relative h-36 w-36">
-          <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
-            <circle
-              cx="60"
-              cy="60"
-              r="52"
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="8"
-            />
-            <circle
-              cx="60"
-              cy="60"
-              r="52"
-              fill="none"
-              stroke={stage.color}
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-              style={{
-                transition: 'stroke-dashoffset 1.8s ease-in-out, stroke 1.8s ease-in-out',
-                filter: `drop-shadow(0 0 8px ${stage.color}80)`,
-              }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span
-              className="text-3xl font-bold tabular-nums transition-colors duration-700"
-              style={{ color: stage.color }}
-            >
-              {stage.pct}
-            </span>
-            <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-aegis-text-muted">
-              Threat Score
-            </span>
-          </div>
-        </div>
+      <div className="px-4 pb-5 pt-4 sm:px-5">
+        {/* Stage selector */}
         <div
-          className="mt-3 flex items-center gap-2 rounded-full px-3 py-1 transition-colors duration-700"
-          style={{ backgroundColor: `${stage.color}1a` }}
+          role="group"
+          aria-label="Risk stage"
+          className="flex w-full flex-wrap gap-0.5 rounded-md border border-aegis-rule bg-aegis-sunken p-0.5"
         >
-          <ShieldCheck className="h-3.5 w-3.5" style={{ color: stage.color }} />
-          <span
-            className="text-xs font-semibold transition-colors duration-700"
-            style={{ color: stage.color }}
-          >
-            {stage.label}
-          </span>
-          <TrendingDown className="h-3 w-3 text-aegis-success" />
-        </div>
-      </div>
-
-      {/* SHAP snippet */}
-      <div className="mt-6 rounded-xl border border-white/[0.06] bg-black/30 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5 text-aegis-accent-secondary" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-aegis-text-secondary">
-              SHAP Feature Attribution
-            </span>
-          </div>
-          <span className="text-[10px] text-aegis-text-muted">8 indicators</span>
-        </div>
-        <div className="mt-3 space-y-2">
-          {shapFeatures.map((f) => (
-            <div key={f.name} className="flex items-center gap-2">
-              <span className="w-44 shrink-0 truncate text-[10px] font-mono text-aegis-text-muted">
-                {f.name}
-              </span>
-              <div className="relative h-1.5 flex-1 rounded-full bg-white/[0.04]">
-                <div
-                  className="absolute top-0 h-1.5 rounded-full"
-                  style={{
-                    left: f.dir === 'down' ? 'auto' : '50%',
-                    right: f.dir === 'up' ? 'auto' : '50%',
-                    width: `${Math.abs(f.value) * 120}px`,
-                    backgroundColor:
-                      f.dir === 'up' ? '#EF4444' : '#10B981',
-                  }}
-                />
-                <div className="absolute left-1/2 top-0 h-1.5 w-px bg-white/20" />
-              </div>
-              <span
-                className={`w-10 text-right text-[10px] tabular-nums font-mono ${
-                  f.dir === 'up' ? 'text-aegis-danger' : 'text-aegis-success'
-                }`}
+          {STAGES.map((s, idx) => {
+            const isActive = idx === stageIdx;
+            return (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => setStageIdx(idx)}
+                aria-pressed={isActive}
+                className={cn(
+                  'flex-auto rounded-sm px-1.5 py-1 text-xs transition-[color,transform] active:scale-[0.98]',
+                  isActive ? 'seg-active font-semibold' : 'font-medium text-aegis-muted hover:text-aegis-ink',
+                )}
               >
-                {f.value > 0 ? '+' : ''}
-                {f.value.toFixed(2)}
-              </span>
-            </div>
-          ))}
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Gauge */}
+        <div className="mt-5 flex flex-col items-center">
+          <RiskGauge value={stage.pct} label="Threat Score" />
+          <span className={cn('mt-2 text-sm font-semibold', stage.text)}>{stage.label}</span>
+        </div>
+
+        {/* SHAP snippet */}
+        <div className="mt-5 border-t border-aegis-rule pt-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-sm font-semibold text-aegis-ink">SHAP Feature Attribution</span>
+            <span className="text-xs text-aegis-muted">8 indicators</span>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {shapFeatures.map((f, index) => (
+              <li
+                key={f.name}
+                className="grid grid-cols-[minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-1 sm:grid-cols-[12.75rem_minmax(0,1fr)_3rem]"
+              >
+                <span className="col-span-2 truncate font-mono text-xs text-aegis-ink-2 sm:col-span-1">
+                  {f.name}
+                </span>
+                <span className="relative h-2" aria-hidden="true">
+                  {/* Bars grow out of the zero line, 30ms apart; keyed on the stage so they replay. */}
+                  <motion.span
+                    key={`${stageIdx}-${f.name}`}
+                    className={cn(
+                      'absolute inset-y-0',
+                      f.dir === 'up' ? 'left-1/2 bg-aegis-high' : 'right-1/2 bg-aegis-safe',
+                    )}
+                    style={{
+                      width: `${Math.min(50, (Math.abs(f.value) / HALF_TRACK_VALUE) * 50)}%`,
+                      originX: f.dir === 'up' ? 0 : 1,
+                    }}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.45, ease: EASE, delay: index * 0.03 }}
+                  />
+                  <span className="absolute -inset-y-0.5 left-1/2 w-px bg-aegis-rule" />
+                </span>
+                <span
+                  className={cn(
+                    'text-right font-mono text-xs tabular-nums',
+                    f.dir === 'up' ? 'text-aegis-high' : 'text-aegis-safe',
+                  )}
+                >
+                  {f.value > 0 ? '+' : ''}
+                  {f.value.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
-      {/* Footer stats */}
-      <div className="mt-4 flex items-center justify-between text-[10px] text-aegis-text-muted">
-        <span className="flex items-center gap-1">
-          <Zap className="h-3 w-3 text-aegis-accent-secondary" />
-          Illustrative only
-        </span>
+      {/* Footer */}
+      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-aegis-rule px-5 py-2.5 text-xs text-aegis-muted">
+        <span>Illustrative only</span>
         <span>RF + XGBoost ensemble</span>
         <span>TreeExplainer</span>
-      </div>
-    </div>
+      </figcaption>
+    </figure>
   );
 }

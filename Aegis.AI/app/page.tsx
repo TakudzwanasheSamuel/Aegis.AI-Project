@@ -18,8 +18,14 @@ import {
   GraduationCap,
   Github,
 } from 'lucide-react';
+import { BrandMark, Wordmark } from '@/components/layout/brand-mark';
+import { CapabilityGrid } from '@/components/landing/capability-grid';
+import { HeroMesh } from '@/components/landing/hero-mesh';
 import { HeroThreatCard } from '@/components/landing/hero-threat-card';
+import { Reveal, StaggerGroup, StaggerItem } from '@/components/motion/reveal';
 import { ArchitectureFlow } from '@/components/landing/architecture-flow';
+import { buttonClasses } from '@/components/ui-aegis/button';
+import { cn } from '@/lib/utils';
 
 const PROBLEM_POINTS = [
   {
@@ -72,300 +78,226 @@ const CAPABILITIES = [
     icon: ShieldCheck,
     title: 'Classification, not containment',
     desc: 'Scores a system-wide snapshot as Safe, Moderate, High, or Critical. It does not prevent, isolate, or stop an attack.',
-    accent: '#6366F1',
   },
   {
     icon: BrainCircuit,
     title: 'SHAP Decision Transparency',
     desc: 'Each verdict includes the live TreeExplainer impacts for the eight harmonized indicators.',
-    accent: '#22D3EE',
   },
   {
     icon: Layers,
     title: 'Feature Harmonization Layer',
     desc: 'Aggregates per-process Windows measurements into system-wide indicators. A full memory dump is not required at inference time.',
-    accent: '#10B981',
   },
   {
     icon: Zap,
     title: 'FastAPI assessment',
     desc: 'The gateway harmonizes the eight indicators, scores them with Random Forest and XGBoost, and returns SHAP.',
-    accent: '#F59E0B',
   },
   {
     icon: Gauge,
     title: 'Endpoint snapshot agent',
     desc: 'The Python agent collects accessible processes and posts one system-wide snapshot. It does not act on the host.',
-    accent: '#3B82F6',
   },
   {
     icon: TestTube,
     title: 'Interactive Viva Sandbox',
     desc: 'Posts synthetic system-wide snapshots to the same assess endpoint used by the live agent.',
-    accent: '#DC2626',
   },
 ];
 
+const PLATFORM_LINKS = [
+  { label: 'Research Evaluation', href: '/research' },
+  { label: 'Executive Overview', href: '/dashboard' },
+  { label: 'Threat Analysis', href: '/analysis' },
+  { label: 'Historical Analytics', href: '/history' },
+  { label: 'Scenario Sandbox', href: '/sandbox' },
+];
+
+/** Major sections are separated by a rule: 64px of rhythm on mobile, 96px on desktop. */
+const SECTION = 'mt-8 border-t border-aegis-rule pt-8 lg:mt-12 lg:pt-12';
+
+function SectionHeader({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <header className="mb-10 max-w-[65ch]">
+      <p className="text-sm font-medium text-aegis-muted">{eyebrow}</p>
+      <h2 className="mt-2 text-[1.75rem] leading-tight text-aegis-ink lg:text-[2rem]">{title}</h2>
+      <p className="mt-3 text-base leading-relaxed text-aegis-muted">{children}</p>
+    </header>
+  );
+}
+
 export default function LandingPage() {
   return (
-    <div className="space-y-24 pb-16">
+    <div className="max-w-[1200px] pb-4">
       {/* ─────────────────────────── 1. HERO ─────────────────────────── */}
-      <section className="relative overflow-hidden rounded-card">
-        {/* Deep indigo gradient background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(135deg, #1E1B4B 0%, #0F172A 45%, #020617 100%)',
-          }}
-        />
-        {/* Radial accent glows */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{
-            backgroundImage:
-              'radial-gradient(ellipse 500px 300px at 15% 20%, rgba(99,102,241,0.25), transparent), radial-gradient(ellipse 400px 250px at 85% 80%, rgba(34,211,238,0.18), transparent)',
-          }}
-        />
-        {/* Grid overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
+      <StaggerGroup
+        as="section"
+        className="relative isolate grid items-start gap-12 pb-8 pt-2 lg:pb-12 lg:pt-6 xl:grid-cols-[minmax(0,1fr)_28rem] xl:gap-14"
+      >
+        <HeroMesh />
 
-        <div className="relative grid items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:px-16 lg:py-24">
-          {/* Left: copy + CTAs */}
-          <div className="animate-fade-in">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] px-4 py-1.5 backdrop-blur-md">
-              <span className="text-sm">🚀</span>
-              <span className="text-xs font-medium tracking-wide text-aegis-text-secondary">
-                Decision-support console • Explainable AI + Memory Forensics
-              </span>
-            </div>
+        {/* Left: copy + CTAs */}
+        <div>
+          <StaggerItem as="p" className="text-sm text-aegis-muted">
+            Decision-support console • Explainable AI + Memory Forensics
+          </StaggerItem>
 
-            <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-5xl xl:text-6xl">
-              Proactive Behavioral Ransomware Detection Powered by{' '}
-              <span className="text-gradient">Explainable AI</span>
-            </h1>
+          <StaggerItem as="h1" className="mt-4 max-w-[20ch] text-[2.25rem] leading-[1.12] text-aegis-ink sm:text-[2.75rem] 2xl:text-[3.25rem]">
+            Proactive Behavioral Ransomware Detection Powered by Explainable AI
+          </StaggerItem>
 
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-aegis-text-secondary lg:text-lg">
-              Models are trained on the CIC-MalMem-2022 memory-forensic dataset and
-              scored against live Windows endpoint telemetry. A Feature Harmonization
-              Layer aggregates per-process measurements into system-wide indicators.
-              TreeExplainer SHAP explains each classification. AegisAI is
-              decision-support only: it classifies and explains, and it does not
-              prevent, isolate, or stop an attack. Near-perfect benchmark accuracy
-              reflects the high separability of the dataset, and live performance is
-              evaluated separately.
-            </p>
+          <StaggerItem as="p" className="mt-6 max-w-[65ch] text-base leading-relaxed text-aegis-ink-2 lg:text-[1.0625rem]">
+            Models are trained on the CIC-MalMem-2022 memory-forensic dataset and
+            scored against live Windows endpoint telemetry. A Feature Harmonization
+            Layer aggregates per-process measurements into system-wide indicators.
+            TreeExplainer SHAP explains each classification. AegisAI is
+            decision-support only: it classifies and explains, and it does not
+            prevent, isolate, or stop an attack. Near-perfect benchmark accuracy
+            reflects the high separability of the dataset, and live performance is
+            evaluated separately.
+          </StaggerItem>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link
-                href="/dashboard"
-                className="btn-gradient flex items-center justify-center gap-2 rounded-button px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.03]"
-              >
-                Launch Analytics Console
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/sandbox"
-                className="glass-panel flex items-center justify-center gap-2 rounded-button px-7 py-3.5 text-sm font-semibold text-aegis-text-primary transition-colors hover:bg-white/[0.06]"
-              >
-                <Terminal className="h-4 w-4 text-aegis-accent-secondary" />
-                Explore Scenario Sandbox
-              </Link>
-            </div>
+          <StaggerItem className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/dashboard"
+              className={buttonClasses('primary', 'md', 'h-auto px-5 py-2.5')}
+            >
+              Launch Analytics Console
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/sandbox"
+              className={buttonClasses('secondary', 'md', 'h-auto px-5 py-2.5')}
+            >
+              <Terminal className="h-4 w-4" aria-hidden="true" />
+              Explore Scenario Sandbox
+            </Link>
+          </StaggerItem>
 
-            {/* Trust indicators */}
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-aegis-text-muted">
-              <span className="flex items-center gap-1.5">
-                <Activity className="h-3.5 w-3.5 text-aegis-success" />
-                CIC-MalMem-2022 benchmark
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-aegis-accent-secondary" />
-                Decision-support mode
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Cpu className="h-3.5 w-3.5 text-aegis-info" />
-                8 system-wide indicators
-              </span>
-            </div>
-          </div>
-
-          {/* Right: floating mock card */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="animate-fade-in [animation-delay:200ms]">
-              <HeroThreatCard />
-            </div>
-          </div>
+          {/* Trust indicators */}
+          <StaggerItem as="ul" className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-aegis-muted">
+            <li className="flex items-center gap-1.5">
+              <Activity className="h-4 w-4 shrink-0" aria-hidden="true" />
+              CIC-MalMem-2022 benchmark
+            </li>
+            <li className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 shrink-0" aria-hidden="true" />
+              Decision-support mode
+            </li>
+            <li className="flex items-center gap-1.5">
+              <Cpu className="h-4 w-4 shrink-0" aria-hidden="true" />
+              8 system-wide indicators
+            </li>
+          </StaggerItem>
         </div>
-      </section>
+
+        {/* Right: illustrative figure */}
+        <StaggerItem className="xl:pt-1">
+          <HeroThreatCard />
+        </StaggerItem>
+      </StaggerGroup>
 
       {/* ─────────────────────── 2. PROBLEM & INNOVATION ─────────────── */}
-      <section>
-        <div className="mb-10 text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-aegis-accent-secondary">
-            Problem & Innovation
-          </span>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-aegis-text-primary lg:text-4xl">
-            Why Traditional EDR Falls Short
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-aegis-text-muted">
-            Legacy endpoint security was built for well-resourced enterprises.
-            AegisAI rethinks the model for resource-constrained environments.
-          </p>
-        </div>
+      <Reveal className={SECTION}>
+        <SectionHeader eyebrow="Problem & Innovation" title="Why Traditional EDR Falls Short">
+          Legacy endpoint security was built for well-resourced enterprises.
+          AegisAI rethinks the model for resource-constrained environments.
+        </SectionHeader>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Problem card */}
-          <div className="surface-card rounded-card p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-aegis-danger/10 border border-aegis-danger/20">
-                <EyeOff className="h-5 w-5 text-aegis-danger" />
-              </div>
-              <h3 className="text-lg font-bold text-aegis-text-primary">
-                The Problem with Traditional EDR
-              </h3>
-            </div>
-            <div className="space-y-5">
+        <div className="grid divide-y divide-aegis-rule lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+          {/* Problem */}
+          <div className="pb-8 lg:pb-0 lg:pr-10">
+            <h3 className="text-lg text-aegis-ink">The Problem with Traditional EDR</h3>
+            <ul className="mt-4 divide-y divide-aegis-rule border-t border-aegis-rule">
               {PROBLEM_POINTS.map((p) => {
                 const Icon = p.icon;
                 return (
-                  <div key={p.title} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-aegis-danger/5 border border-aegis-danger/10">
-                      <Icon className="h-4 w-4 text-aegis-danger" />
-                    </div>
+                  <li key={p.title} className="flex items-start gap-3 py-4">
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-aegis-critical" aria-hidden="true" />
                     <div>
-                      <p className="text-sm font-semibold text-aegis-text-primary">
-                        {p.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-relaxed text-aegis-text-muted">
-                        {p.desc}
-                      </p>
+                      <p className="text-sm font-semibold text-aegis-ink">{p.title}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-aegis-muted">{p.desc}</p>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
 
-          {/* Innovation card */}
-          <div className="surface-card rounded-card p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-aegis-accent-primary/10 border border-aegis-accent-primary/20">
-                <BrainCircuit className="h-5 w-5 text-aegis-accent-primary" />
-              </div>
-              <h3 className="text-lg font-bold text-aegis-text-primary">
-                The AegisAI Innovation
-              </h3>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+          {/* Innovation */}
+          <div className="pt-8 lg:pl-10 lg:pt-0">
+            <h3 className="text-lg text-aegis-ink">The AegisAI Innovation</h3>
+            <ul className="mt-4 grid gap-px border-t border-aegis-rule bg-aegis-rule sm:grid-cols-2">
               {INNOVATION_PILLARS.map((pillar) => {
                 const Icon = pillar.icon;
                 return (
-                  <div
-                    key={pillar.title}
-                    className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04]"
-                  >
-                    <Icon className="h-5 w-5 text-aegis-accent-secondary" />
-                    <p className="mt-3 text-sm font-semibold text-aegis-text-primary">
-                      {pillar.title}
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-aegis-text-muted">
-                      {pillar.desc}
-                    </p>
-                  </div>
+                  <li key={pillar.title} className="bg-aegis-paper py-4 sm:odd:pr-5 sm:even:pl-5">
+                    <Icon className="h-4 w-4 text-aegis-accent" aria-hidden="true" />
+                    <p className="mt-2 text-sm font-semibold text-aegis-ink">{pillar.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-aegis-muted">{pillar.desc}</p>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ─────────────────────── 3. ARCHITECTURE WORKFLOW ────────────── */}
-      <section>
-        <div className="mb-10 text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-aegis-accent-secondary">
-            Architecture Workflow
-          </span>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-aegis-text-primary lg:text-4xl">
-            End-to-End Detection Pipeline
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-aegis-text-muted">
-            From the endpoint agent to the analyst console. Click a stage. Traffic
-            moves one way and never returns a control command to the host.
-          </p>
-        </div>
+      <Reveal className={SECTION}>
+        <SectionHeader eyebrow="Architecture Workflow" title="End-to-End Detection Pipeline">
+          From the endpoint agent to the analyst console. Click a stage. Traffic
+          moves one way and never returns a control command to the host.
+        </SectionHeader>
 
         <ArchitectureFlow />
-      </section>
+      </Reveal>
 
       {/* ─────────────────────── 4. KEY CAPABILITIES ──────────────────── */}
-      <section>
-        <div className="mb-10 text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-aegis-accent-secondary">
-            Key Research Capabilities
-          </span>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-aegis-text-primary lg:text-4xl">
-            Six Core Capabilities
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-aegis-text-muted">
-            Each capability is designed, measured, and validated against the
-            constraints of real-world, resource-limited deployments.
-          </p>
-        </div>
+      <Reveal className={SECTION}>
+        <SectionHeader eyebrow="Key Research Capabilities" title="Six Core Capabilities">
+          Each capability is designed, measured, and validated against the
+          constraints of real-world, resource-limited deployments.
+        </SectionHeader>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <CapabilityGrid>
           {CAPABILITIES.map((cap) => {
             const Icon = cap.icon;
             return (
-              <div
-                key={cap.title}
-                className="group surface-card rounded-card p-6 transition-all duration-300 hover:border-white/[0.12] hover:shadow-glow-primary"
-              >
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl border transition-transform group-hover:scale-110"
-                  style={{
-                    backgroundColor: `${cap.accent}1a`,
-                    borderColor: `${cap.accent}30`,
-                  }}
-                >
-                  <Icon className="h-5 w-5" style={{ color: cap.accent }} />
-                </div>
-                <h3 className="mt-4 text-base font-semibold text-aegis-text-primary">
+              <li key={cap.title} className="lift bg-aegis-surface p-6">
+                <Icon className="h-5 w-5 text-aegis-ink-2" strokeWidth={1.75} aria-hidden="true" />
+                <h3 className="mt-3 font-sans text-base font-semibold tracking-normal text-aegis-ink">
                   {cap.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-aegis-text-muted">
-                  {cap.desc}
-                </p>
-              </div>
+                <p className="mt-1.5 text-sm leading-relaxed text-aegis-muted">{cap.desc}</p>
+              </li>
             );
           })}
-        </div>
-      </section>
+        </CapabilityGrid>
+      </Reveal>
 
       {/* ─────────────────────── 5. FOOTER ────────────────────────────── */}
-      <footer className="border-t border-white/[0.06] pt-12">
-        <div className="grid gap-8 lg:grid-cols-4">
+      <Reveal as="footer" className={cn(SECTION, 'text-sm')}>
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {/* Brand */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-aegis-accent-primary to-aegis-accent-secondary shadow-glow-primary">
-                <ShieldCheck className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <span className="text-base font-bold text-gradient">AegisAI</span>
-                <p className="text-[10px] uppercase tracking-wider text-aegis-text-muted">
-                  Threat Analytics
-                </p>
-              </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <BrandMark className="h-7 w-7" />
+              <span className="flex flex-col">
+                <Wordmark />
+                <span className="text-xs leading-tight text-aegis-muted">Threat Analytics</span>
+              </span>
             </div>
-            <p className="mt-4 text-xs leading-relaxed text-aegis-text-muted">
+            <p className="mt-4 leading-relaxed text-aegis-muted">
               An explainable ransomware classification console developed as part
               of a BSc Honours Data Science dissertation at Midlands State
               University. It classifies snapshots and explains them. It does not
@@ -374,35 +306,26 @@ export default function LandingPage() {
           </div>
 
           {/* Quick links */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-aegis-text-secondary">
-              Platform
-            </p>
-            <ul className="mt-4 space-y-2">
-              {[
-                { label: 'Research Evaluation', href: '/research' },
-                { label: 'Executive Overview', href: '/dashboard' },
-                { label: 'Threat Analysis', href: '/analysis' },
-                { label: 'Scenario Sandbox', href: '/sandbox' },
-              ].map((l) => (
+          <nav aria-label="Platform">
+            <p className="font-semibold text-aegis-ink-2">Platform</p>
+            <ul className="mt-3 space-y-2">
+              {PLATFORM_LINKS.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-xs text-aegis-text-muted transition-colors hover:text-aegis-accent-secondary"
+                    className="rounded-sm text-aegis-muted underline-offset-4 transition-colors hover:text-aegis-accent hover:underline"
                   >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           {/* Tech stack */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-aegis-text-secondary">
-              Technology Stack
-            </p>
-            <ul className="mt-4 space-y-2 text-xs text-aegis-text-muted">
+            <p className="font-semibold text-aegis-ink-2">Technology Stack</p>
+            <ul className="mt-3 space-y-2 text-aegis-muted">
               <li>Next.js 14 · App Router</li>
               <li>FastAPI · scikit-learn · XGBoost</li>
               <li>SHAP TreeExplainer</li>
@@ -413,43 +336,37 @@ export default function LandingPage() {
 
           {/* Academic credit */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-aegis-text-secondary">
-              Academic Credentials
-            </p>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-start gap-2">
-                <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-aegis-accent-primary" />
-                <p className="text-xs leading-relaxed text-aegis-text-muted">
-                  Midlands State University — Department of Data Science &
-                  Informatics
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Microscope className="mt-0.5 h-4 w-4 shrink-0 text-aegis-accent-secondary" />
-                <p className="text-xs leading-relaxed text-aegis-text-muted">
+            <p className="font-semibold text-aegis-ink-2">Academic Credentials</p>
+            <ul className="mt-3 space-y-3 text-aegis-muted">
+              <li className="flex items-start gap-2">
+                <GraduationCap className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="leading-relaxed">
+                  Midlands State University — Department of Information and
+                  Marketing Sciences
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Microscope className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="leading-relaxed">
                   BSc Honours Dissertation — 2026 Academic Year
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Github className="mt-0.5 h-4 w-4 shrink-0 text-aegis-text-muted" />
-                <p className="text-xs leading-relaxed text-aegis-text-muted">
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Github className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="leading-relaxed">
                   Open-source research project · MIT License
-                </p>
-              </div>
-            </div>
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] py-6 sm:flex-row">
-          <p className="text-[11px] text-aegis-text-muted">
-            © 2026 AegisAI · Midlands State University Data Science Research
-          </p>
-          <p className="text-[11px] text-aegis-text-muted">
-            Built in accordance with MSU dissertation guidelines
-          </p>
+        <div className="mt-10 flex flex-col gap-2 border-t border-aegis-rule pt-6 text-xs text-aegis-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 AegisAI · Midlands State University Data Science Research</p>
+          <p>Built in accordance with MSU dissertation guidelines</p>
         </div>
-      </footer>
+      </Reveal>
     </div>
   );
 }

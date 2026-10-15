@@ -1,15 +1,10 @@
 'use client';
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { useChartKit } from '@/components/charts/chart-kit';
+import { Panel } from '@/components/ui-aegis';
+import { withAlpha } from '@/hooks/use-theme-colors';
 import type { ThreatFrequencyPoint } from '@/lib/history/types';
 
 interface ThreatFrequencyChartProps {
@@ -18,58 +13,48 @@ interface ThreatFrequencyChartProps {
 }
 
 export function ThreatFrequencyChart({ data, subtitle }: ThreatFrequencyChartProps) {
+  const kit = useChartKit();
+
   return (
-    <div className="surface-card rounded-card p-5">
-      <div>
-        <h3 className="text-sm font-semibold text-aegis-text-primary">
-          Threat Frequency Over Time
-        </h3>
-        <p className="mt-0.5 text-xs text-aegis-text-muted">{subtitle}</p>
-      </div>
-      <div className="mt-4 h-56">
+    <Panel title="Threat Frequency Over Time" description={subtitle}>
+      <div className="h-72">
+        {data.length === 0 ? (
+          <p className="flex h-full items-center justify-center px-6 text-center text-sm text-aegis-muted">
+            No Moderate, High, or Critical assessments in this range.
+          </p>
+        ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="historyIndigoNavy" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366F1" stopOpacity={0.55} />
-                <stop offset="60%" stopColor="#4338CA" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="#1E3A8A" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
-              axisLine={false}
-              tickLine={false}
-            />
+          <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid {...kit.grid} />
+            <XAxis dataKey="label" tick={kit.tick} axisLine={kit.axisLine} tickLine={false} />
             <YAxis
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
+              tick={kit.numericTick}
               axisLine={false}
               tickLine={false}
               allowDecimals={false}
+              width={36}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: '#181A20',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#F8FAFC',
-              }}
-              labelStyle={{ color: '#94A3B8' }}
+              {...kit.tooltip}
+              cursor={{ stroke: kit.colors.rule }}
               formatter={(value: number) => [`${value} alerts`, 'Count']}
             />
             <Area
               type="monotone"
               dataKey="alerts"
-              stroke="#6366F1"
+              stroke={kit.colors.accent}
               strokeWidth={2}
-              fill="url(#historyIndigoNavy)"
+              fill={withAlpha(kit.colors.accent, 0.15)}
+              fillOpacity={1}
+              dot={{ r: 3, fill: kit.colors.accent, strokeWidth: 0 }}
+              activeDot={{ r: 4 }}
+              isAnimationActive={kit.animate}
+              animationDuration={kit.duration}
             />
           </AreaChart>
         </ResponsiveContainer>
+        )}
       </div>
-    </div>
+    </Panel>
   );
 }

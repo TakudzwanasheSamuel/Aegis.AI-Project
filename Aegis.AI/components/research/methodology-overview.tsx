@@ -2,6 +2,7 @@
 
 import { Database, FlaskConical, Layers } from 'lucide-react';
 
+import { Panel } from '@/components/ui-aegis';
 import type { ResearchBenchmark } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -54,45 +55,43 @@ export function MethodologyOverview({ benchmark }: { benchmark: ResearchBenchmar
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {cards.map((card) => {
-        const Icon = ICONS[card.icon];
-        return (
-          <div key={card.title} className="surface-card rounded-card p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-aegis-accent-primary/20 bg-aegis-accent-primary/10">
-                <Icon className="h-5 w-5 text-aegis-accent-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-                  {card.title}
-                </p>
-                <h3 className="mt-1 text-base font-semibold text-aegis-text-primary">{card.headline}</h3>
-              </div>
-            </div>
-            <ul className="mt-4 space-y-2">
-              {card.details.map((detail) => (
-                <li
-                  key={detail}
-                  className="flex items-start gap-2 text-xs leading-relaxed text-aegis-text-secondary"
-                >
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-aegis-accent-secondary" />
-                  {detail}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
-    </div>
+    <Panel as="div" flush>
+      <div className="grid divide-y divide-aegis-rule md:grid-cols-3 md:divide-x md:divide-y-0">
+        {cards.map((card) => {
+          const Icon = ICONS[card.icon];
+          return (
+            <section key={card.title} className="min-w-0 p-5">
+              <p className="flex items-center gap-2 text-sm text-aegis-muted">
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {card.title}
+              </p>
+              <h2 className="mt-1.5 font-sans text-base font-semibold tracking-normal text-aegis-ink">
+                {card.headline}
+              </h2>
+              <ul className="mt-3 space-y-1.5">
+                {card.details.map((detail) => (
+                  <li
+                    key={detail}
+                    className="flex items-start gap-2 text-sm leading-relaxed text-aegis-ink-2"
+                  >
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-aegis-muted" aria-hidden="true" />
+                    {detail}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 
 export function RoleBadge({ role }: { role: 'primary' | 'benchmark' | 'baseline' }) {
   const styles = {
-    primary: 'bg-aegis-accent-primary/10 text-aegis-accent-primary border-aegis-accent-primary/20',
-    benchmark: 'bg-aegis-accent-secondary/10 text-aegis-accent-secondary border-aegis-accent-secondary/20',
-    baseline: 'bg-aegis-text-muted/10 text-aegis-text-muted border-white/[0.08]',
+    primary: 'border-aegis-accent/50 text-aegis-accent',
+    benchmark: 'border-aegis-rule text-aegis-ink-2',
+    baseline: 'border-aegis-rule text-aegis-muted',
   };
 
   const labels = {
@@ -104,7 +103,7 @@ export function RoleBadge({ role }: { role: 'primary' | 'benchmark' | 'baseline'
   return (
     <span
       className={cn(
-        'ml-2 inline-flex rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+        'ml-2 inline-flex rounded-sm border px-1.5 py-px text-xs font-medium leading-4',
         styles[role],
       )}
     >

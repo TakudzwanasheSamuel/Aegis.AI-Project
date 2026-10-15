@@ -10,6 +10,7 @@ import { FeatureImportanceChart } from '@/components/research/feature-importance
 import { MethodologyOverview } from '@/components/research/methodology-overview';
 import { ModelBenchmarkTable } from '@/components/research/model-benchmark-table';
 import { PageHeader } from '@/components/layout/page-header';
+import { Notice } from '@/components/ui-aegis';
 import { Button } from '@/components/ui/button';
 import { fetchResearchBenchmark, type ResearchBenchmark } from '@/lib/api';
 import { downloadFile } from '@/lib/history/export';
@@ -42,7 +43,7 @@ export function ResearchWorkspace() {
             ? `${benchmark.n_features} harmonized features mapped from ${benchmark.dataset} (${benchmark.n_samples.toLocaleString()} samples) · live training_metrics.json`
             : 'Live training_metrics.json'
         }
-        icon={<BarChart3 className="h-6 w-6 text-aegis-accent-secondary" />}
+        icon={<BarChart3 />}
         actions={
           <Button
             type="button"
@@ -55,25 +56,21 @@ export function ResearchWorkspace() {
                 'application/json',
               );
             }}
-            className="h-9 gap-2 btn-gradient text-xs font-semibold text-white"
+            className="h-9 gap-2"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-4 w-4" aria-hidden="true" />
             Export Benchmark Data (JSON)
           </Button>
         }
       />
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-aegis-danger/20 bg-aegis-danger/10 px-3 py-2 text-xs text-aegis-danger">
-          {error}
-        </p>
-      )}
+      {error && <Notice className="mb-6">{error}</Notice>}
 
       <div className="space-y-6">
         <MethodologyOverview benchmark={benchmark} />
         <ModelBenchmarkTable />
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {confusion && (
             <ConfusionMatrixGraphic
               data={{
@@ -84,9 +81,13 @@ export function ResearchWorkspace() {
               }}
             />
           )}
-          {importance.length > 0 && <FeatureImportanceChart data={importance} />}
           {classes && (
             <ClassDistributionChart benign={classes.benign} malware={classes.malware} />
+          )}
+          {importance.length > 0 && (
+            <div className="min-w-0 lg:col-span-2">
+              <FeatureImportanceChart data={importance} />
+            </div>
           )}
         </div>
 

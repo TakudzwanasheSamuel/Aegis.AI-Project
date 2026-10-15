@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, ChevronDown, Loader2 } from 'lucide-react';
 
 import { BehaviouralReasons } from '@/components/analysis/behavioural-reasons';
 import { FeatureHarmonizationTable } from '@/components/analysis/harmonization-table';
@@ -11,12 +11,16 @@ import { RecommendationBanner } from '@/components/analysis/decision-cards';
 import { ProcessTargetHeader } from '@/components/analysis/process-target-header';
 import { ShapExplainabilityPanel } from '@/components/analysis/shap-panel';
 import { PageHeader } from '@/components/layout/page-header';
+import { Notice, Panel, Skeleton, buttonClasses } from '@/components/ui-aegis';
 import {
   fetchAssessment,
   fetchRecent,
   pickLatestFlagged,
   type AssessmentRecord,
 } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
+const MEMORY_MODEL_VIEW_ID = 'memory-model-view';
 
 export function AnalysisWorkspace() {
   const searchParams = useSearchParams();
@@ -72,6 +76,7 @@ export function AnalysisWorkspace() {
   }, [lookupKey]);
 
   const behavioural = record?.triggered_by === 'behavioural';
+  const showHarmonization = record?.triggered_by === 'memory_model';
 
   return (
     <div>
@@ -82,10 +87,10 @@ export function AnalysisWorkspace() {
             ? 'Why this assessment was flagged, and what to do next.'
             : 'Live assessment explainability: SHAP attributions and the 8-feature harmonization layer.'
         }
-        icon={<BrainCircuit className="h-6 w-6 text-aegis-accent-secondary" />}
+        icon={<BrainCircuit />}
         actions={
           options.length > 0 ? (
-            <label className="flex items-center gap-2 text-xs text-aegis-text-muted">
+            <label className="flex w-full flex-col gap-1 text-sm text-aegis-muted sm:w-auto sm:flex-row sm:items-center sm:gap-2">
               Recent assessments
               <select
                 value={record ? String(record.id) : ''}
@@ -93,7 +98,7 @@ export function AnalysisWorkspace() {
                   const nextId = event.target.value;
                   if (nextId) router.push(`/analysis?id=${nextId}`);
                 }}
-                className="h-9 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 text-xs text-aegis-text-secondary focus:outline-none"
+                className="h-9 w-full min-w-0 rounded-md border border-aegis-rule bg-aegis-surface px-2 font-mono text-xs text-aegis-ink sm:w-auto sm:max-w-xs"
               >
                 {options.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -106,66 +111,99 @@ export function AnalysisWorkspace() {
         }
       />
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-aegis-danger/20 bg-aegis-danger/10 px-3 py-2 text-xs text-aegis-danger">
-          {error}
-        </p>
-      )}
+      {error && <Notice className="mb-6">{error}</Notice>}
 
       {loading && !record ? (
-        <p className="text-sm text-aegis-text-muted">Loading live assessment from FastAPI…</p>
-      ) : !record ? (
-        <div className="surface-card rounded-card p-8 text-sm text-aegis-text-muted">
-          No persisted assessments yet.{' '}
-          <Link href="/sandbox" className="text-aegis-accent-secondary hover:underline">
-            Send a sandbox payload
-          </Link>{' '}
-          or run the endpoint agent, then return here.
+        <div role="status" className="space-y-6">
+          <p className="flex items-center gap-2 text-sm text-aegis-muted">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Loading live assessment from FastAPI…
+          </p>
+          <div className="space-y-4 rounded-lg border border-aegis-rule bg-aegis-surface p-5" aria-hidden="true">
+            <Skeleton className="h-5 w-56" />
+            <div className="flex gap-8">
+              <Skeleton className="h-9 w-40" />
+              <Skeleton className="h-9 w-40" />
+            </div>
+          </div>
+          <div className="space-y-3 rounded-lg border border-aegis-rule bg-aegis-surface p-5" aria-hidden="true">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-56 w-full" />
+          </div>
         </div>
+      ) : !record ? (
+        <Panel as="div">
+          <p className="text-sm text-aegis-muted">
+            No persisted assessments yet.{' '}
+            <Link
+              href="/sandbox"
+              className="rounded-sm text-aegis-accent underline underline-offset-4 hover:no-underline"
+            >
+              Send a sandbox payload
+            </Link>{' '}
+            or run the endpoint agent, then return here.
+          </p>
+        </Panel>
       ) : (
-        <div className="space-y-6">
-          <ProcessTargetHeader record={record} />
-          {behavioural ? (
-            <>
-              <BehaviouralReasons
-                reasons={record.behavioural_reasons ?? []}
-                level={record.behavioural_level}
-                score={record.behavioural_score}
-                recommendation={record.recommendation}
-              />
-              <div className="surface-card rounded-card p-6">
-                <button
-                  type="button"
-                  onClick={() => setShowMemoryModel((open) => !open)}
-                  className="text-sm font-semibold text-aegis-text-primary"
-                >
-                  {showMemoryModel ? 'Hide memory-model view' : 'Memory-model view'}
-                </button>
-                {showMemoryModel && (
-                  <div className="mt-4">
-                    <ShapExplainabilityPanel
-                      features={record.top_shap_features}
-                      prediction={record.prediction}
-                      severity={record.severity}
+        <div
+          className={cn(
+            'grid items-start gap-6',
+            showHarmonization && 'xl:grid-cols-[minmax(0,1fr)_26rem]',
+          )}
+        >
+          <div className="min-w-0 space-y-6">
+            <ProcessTargetHeader record={record} />
+            <RecommendationBanner severity={record.severity} triggeredBy={record.triggered_by} />
+            {behavioural ? (
+              <>
+                <BehaviouralReasons
+                  reasons={record.behavioural_reasons ?? []}
+                  level={record.behavioural_level}
+                  score={record.behavioural_score}
+                  recommendation={record.recommendation}
+                />
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMemoryModel((open) => !open)}
+                    aria-expanded={showMemoryModel}
+                    aria-controls={MEMORY_MODEL_VIEW_ID}
+                    className={buttonClasses('secondary')}
+                  >
+                    {showMemoryModel ? 'Hide memory-model view' : 'Memory-model view'}
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 transition-transform duration-200 motion-reduce:transition-none',
+                        showMemoryModel && 'rotate-180',
+                      )}
+                      aria-hidden="true"
                     />
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <ShapExplainabilityPanel
-              features={record.top_shap_features}
-              prediction={record.prediction}
-              severity={record.severity}
-            />
+                  </button>
+                  {showMemoryModel && (
+                    <div id={MEMORY_MODEL_VIEW_ID} className="mt-4">
+                      <ShapExplainabilityPanel
+                        features={record.top_shap_features}
+                        prediction={record.prediction}
+                        severity={record.severity}
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <ShapExplainabilityPanel
+                features={record.top_shap_features}
+                prediction={record.prediction}
+                severity={record.severity}
+              />
+            )}
+          </div>
+
+          {showHarmonization && (
+            <aside className="min-w-0">
+              <FeatureHarmonizationTable record={record} />
+            </aside>
           )}
-          {record.triggered_by === 'memory_model' && (
-            <FeatureHarmonizationTable record={record} />
-          )}
-          <RecommendationBanner
-            severity={record.severity}
-            triggeredBy={record.triggered_by}
-          />
         </div>
       )}
     </div>

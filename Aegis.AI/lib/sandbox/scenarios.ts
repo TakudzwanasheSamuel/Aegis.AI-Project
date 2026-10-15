@@ -6,7 +6,7 @@ export const SANDBOX_SCENARIOS: SandboxScenario[] = [
     title: 'Normal User Operations',
     subtext: 'A normal snapshot. The result should stay safe.',
     badge: 'LOW RISK BASELINE',
-    badgeClassName: 'bg-aegis-success/10 text-aegis-success border-aegis-success/20',
+    badgeClassName: 'bg-aegis-safe/10 text-aegis-safe-strong border-aegis-safe/20',
     telemetry: {
       hostname: 'SANDBOX-VIVA',
       snapshot_label: 'NORMAL_BASELINE',
@@ -26,7 +26,7 @@ export const SANDBOX_SCENARIOS: SandboxScenario[] = [
     title: 'Resource Intensive Task',
     subtext: 'A busy machine. This should still look safe.',
     badge: 'HIGH RESOURCE',
-    badgeClassName: 'bg-aegis-warning/10 text-aegis-warning border-aegis-warning/20',
+    badgeClassName: 'bg-aegis-moderate/10 text-aegis-moderate-strong border-aegis-moderate/20',
     telemetry: {
       hostname: 'SANDBOX-VIVA',
       snapshot_label: 'HIGH_RESOURCE',
@@ -46,7 +46,7 @@ export const SANDBOX_SCENARIOS: SandboxScenario[] = [
     title: 'Simulated Ransomware Behavior',
     subtext: 'A snapshot that looks like ransomware. The result should flag it.',
     badge: 'RANSOMWARE SIM',
-    badgeClassName: 'bg-aegis-danger/10 text-aegis-danger border-aegis-danger/20',
+    badgeClassName: 'bg-aegis-high/10 text-aegis-high-strong border-aegis-high/20',
     telemetry: {
       hostname: 'SANDBOX-VIVA',
       snapshot_label: 'RANSOMWARE_SIM',

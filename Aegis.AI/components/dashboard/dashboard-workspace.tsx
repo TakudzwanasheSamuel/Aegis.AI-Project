@@ -5,8 +5,9 @@ import { LayoutDashboard } from 'lucide-react';
 
 import { AlertTicker } from '@/components/dashboard/alert-ticker';
 import { DashboardStats } from '@/components/dashboard/stats-grid';
-import { ProcessTable } from '@/components/dashboard/process-table';
+import { LiveTelemetry } from '@/components/dashboard/live-telemetry';
 import { PageHeader } from '@/components/layout/page-header';
+import { Notice, StatusDot } from '@/components/ui-aegis';
 import {
   fetchMetrics,
   fetchRecent,
@@ -14,7 +15,6 @@ import {
   type AssessmentRecord,
   type MetricsResponse,
 } from '@/lib/api';
-import { cn } from '@/lib/utils';
 
 const EMPTY_METRICS: MetricsResponse = {
   total_scanned: 0,
@@ -56,45 +56,24 @@ export function DashboardWorkspace() {
       <PageHeader
         title="Executive Overview"
         subtitle="Real-time threat posture, system health, and active process monitoring."
-        icon={<LayoutDashboard className="h-6 w-6 text-aegis-accent-secondary" />}
+        icon={<LayoutDashboard />}
         actions={
-          <div
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold',
-              agentConnected
-                ? 'border-aegis-success/30 bg-aegis-success/10 text-aegis-success'
-                : 'border-aegis-warning/30 bg-aegis-warning/10 text-aegis-warning',
-            )}
-          >
-            <span className="relative flex h-2 w-2">
-              {agentConnected && (
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aegis-success opacity-60" />
-              )}
-              <span
-                className={cn(
-                  'relative inline-flex h-2 w-2 rounded-full',
-                  agentConnected ? 'bg-aegis-success' : 'bg-aegis-warning',
-                )}
-              />
-            </span>
+          <div className="inline-flex items-center gap-2 rounded-md border border-aegis-rule bg-aegis-surface px-3 py-1.5 text-sm text-aegis-ink-2">
+            <StatusDot tone={agentConnected ? 'safe' : 'moderate'} />
             {agentConnected ? 'Agent Connected / Active Scanning' : 'Waiting for endpoint agent'}
           </div>
         }
       />
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-aegis-danger/20 bg-aegis-danger/10 px-3 py-2 text-xs text-aegis-danger">
-          {error}
-        </p>
-      )}
+      {error && <Notice className="mb-6">{error}</Notice>}
 
       <DashboardStats latest={recent[0] ?? null} />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-10">
-        <div className="lg:col-span-7">
-          <ProcessTable records={recent} updatedAt={updatedAt} />
+      <div className="mt-6 grid gap-6 lg:grid-cols-10">
+        <div className="min-w-0 lg:col-span-7">
+          <LiveTelemetry records={recent} updatedAt={updatedAt} agentConnected={agentConnected} />
         </div>
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <AlertTicker records={recent} />
         </div>
       </div>

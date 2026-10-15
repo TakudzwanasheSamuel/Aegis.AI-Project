@@ -18,26 +18,28 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'glass-panel mb-8 flex flex-col gap-4 rounded-2xl p-6 lg:flex-row lg:items-center lg:justify-between',
+        'mb-8 flex flex-col gap-4 border-b border-aegis-rule pb-6 lg:flex-row lg:items-end lg:justify-between',
         className,
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-3">
         {icon && (
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-aegis-accent-primary/20 to-aegis-accent-secondary/10 border border-white/[0.08]">
+          // Child selectors override the colour/size classes callers pass on the icon.
+          <div
+            className="mt-1.5 shrink-0 text-aegis-muted [&>svg]:h-5 [&>svg]:w-5 [&>svg]:text-aegis-muted"
+            aria-hidden="true"
+          >
             {icon}
           </div>
         )}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-aegis-text-primary">
-            {title}
-          </h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-title font-semibold text-aegis-ink">{title}</h1>
           {subtitle && (
-            <p className="mt-1 text-sm text-aegis-text-muted">{subtitle}</p>
+            <p className="mt-1 max-w-3xl text-sm text-aegis-muted">{subtitle}</p>
           )}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-3">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
     </div>
   );
 }

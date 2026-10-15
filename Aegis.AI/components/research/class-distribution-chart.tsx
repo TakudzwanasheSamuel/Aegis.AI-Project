@@ -4,12 +4,15 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+
+import { ChartCaption, ChartLegend, useChartKit } from '@/components/charts/chart-kit';
+import { Panel } from '@/components/ui-aegis';
 
 export function ClassDistributionChart({
   benign,
@@ -18,54 +21,75 @@ export function ClassDistributionChart({
   benign: number;
   malware: number;
 }) {
+  const kit = useChartKit();
   const data = [{ split: 'CIC-MalMem-2022', benign, malware }];
+  const countLabel = {
+    position: 'top' as const,
+    fill: kit.colors.ink2,
+    fontSize: 12,
+    fontFamily: kit.colors.fontMono,
+    formatter: (value: number) => value.toLocaleString(),
+  };
 
   return (
-    <div className="surface-card rounded-card p-5">
-      <div>
-        <h3 className="text-sm font-semibold text-aegis-text-primary">Class Distribution</h3>
-        <p className="mt-0.5 text-xs text-aegis-text-muted">
-          Benign and malware counts from training_metrics.json
-        </p>
-      </div>
-      <div className="mt-4 h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-            <XAxis
-              dataKey="split"
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: '#94A3B8' }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#181A20',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                fontSize: '12px',
-                color: '#F8FAFC',
-              }}
-              formatter={(value: number, name: string) => [
-                value.toLocaleString(),
-                name === 'benign' ? 'Benign Samples' : 'Malware Samples',
-              ]}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: '11px', color: '#94A3B8' }}
-              formatter={(value) => (value === 'benign' ? 'Benign' : 'Malware')}
-            />
-            <Bar dataKey="benign" fill="#10B981" radius={[4, 4, 0, 0]} name="benign" />
-            <Bar dataKey="malware" fill="#EF4444" radius={[4, 4, 0, 0]} name="malware" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <Panel
+      title="Class Distribution"
+      meta={
+        <ChartLegend
+          items={[
+            { label: 'Benign', swatchClassName: 'bg-aegis-safe' },
+            { label: 'Malware', swatchClassName: 'bg-aegis-high' },
+          ]}
+        />
+      }
+    >
+      <figure>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 24, right: 8, bottom: 0, left: 0 }} barGap={8}>
+              <CartesianGrid {...kit.grid} />
+              <XAxis dataKey="split" tick={kit.tick} axisLine={kit.axisLine} tickLine={false} />
+              <YAxis
+                tick={kit.numericTick}
+                axisLine={false}
+                tickLine={false}
+                width={44}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip
+                {...kit.tooltip}
+                formatter={(value: number, name: string) => [
+                  value.toLocaleString(),
+                  name === 'benign' ? 'Benign Samples' : 'Malware Samples',
+                ]}
+              />
+              <Bar
+                dataKey="benign"
+                fill={kit.colors.safe}
+                radius={[2, 2, 0, 0]}
+                name="benign"
+                maxBarSize={96}
+                isAnimationActive={kit.animate}
+                animationDuration={kit.duration}
+              >
+                <LabelList dataKey="benign" {...countLabel} />
+              </Bar>
+              <Bar
+                dataKey="malware"
+                fill={kit.colors.high}
+                radius={[2, 2, 0, 0]}
+                name="malware"
+                maxBarSize={96}
+                isAnimationActive={kit.animate}
+                animationDuration={kit.duration}
+              >
+                <LabelList dataKey="malware" {...countLabel} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <ChartCaption>Benign and malware counts from training_metrics.json</ChartCaption>
+      </figure>
+    </Panel>
   );
 }

@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { Info, Loader2, ShieldAlert } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { CountUp } from '@/components/motion/count-up';
+import { Notice, Panel, StatusDot, buttonClasses } from '@/components/ui-aegis';
 import { API_BASE_URL } from '@/lib/api';
 
 export function LiveSimulationCard() {
   const [running, setRunning] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +62,19 @@ export function LiveSimulationCard() {
     };
   }, [running]);
 
+  // Elapsed time while running, measured from when this page saw the run start.
+  useEffect(() => {
+    if (!running) {
+      setStartedAt(null);
+      return;
+    }
+    const start = startedAt ?? Date.now();
+    if (startedAt === null) setStartedAt(start);
+    setElapsed(Math.floor((Date.now() - start) / 1000));
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [running, startedAt]);
+
   const startSimulation = async () => {
     setNote(null);
     try {
@@ -82,37 +98,50 @@ export function LiveSimulationCard() {
   };
 
   return (
-    <div className="surface-card rounded-card border border-aegis-danger/25 p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-aegis-danger/20 bg-aegis-danger/10">
-            <ShieldAlert className="h-6 w-6 text-aegis-danger" />
+    <Panel
+      title={
+        <span className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-aegis-high" aria-hidden="true" />
+          Live Ransomware Simulation
+        </span>
+      }
+    >
+      <Notice tone="info" className="flex items-start gap-2.5">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-aegis-accent" aria-hidden="true" />
+        <span className="leading-relaxed">
+          Launches a contained file-activity simulation on this machine. It rewrites and renames
+          files inside a sandbox folder only, with no real encryption, and cleans up automatically.
+        </span>
+      </Notice>
+
+      <button
+        type="button"
+        disabled={running}
+        aria-busy={running}
+        onClick={startSimulation}
+        className={buttonClasses('primary', 'md', 'mt-4 h-10 w-full')}
+      >
+        {running && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+        {running ? 'Simulation running…' : 'Start Live Simulation'}
+      </button>
+
+      {running && (
+        <div className="mt-4" role="status">
+          <div className="relative h-1.5 overflow-hidden rounded-full bg-aegis-sunken" aria-hidden="true">
+            <span className="indeterminate bg-grad-severity absolute inset-y-0 w-1/3 rounded-full" />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-aegis-text-primary">
-              Live Ransomware Simulation
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-aegis-text-secondary">
-              Launches a contained file-activity simulation on this machine. It rewrites and renames
-              files inside a sandbox folder only, with no real encryption, and cleans up automatically.
-            </p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-2 text-aegis-ink-2">
+              <StatusDot tone="high" />
+              Open the Dashboard to watch the behavioural detector respond.
+            </span>
+            <span className="text-xs text-aegis-muted">
+              <CountUp value={elapsed} format={(n) => `${Math.round(n)}s`} />
+            </span>
           </div>
         </div>
-        <Button
-          type="button"
-          disabled={running}
-          onClick={startSimulation}
-          className="btn-gradient h-11 shrink-0 px-5 text-sm font-semibold text-white"
-        >
-          {running ? 'Simulation running…' : 'Start Live Simulation'}
-        </Button>
-      </div>
-      {running && (
-        <p className="mt-4 text-sm text-aegis-text-secondary">
-          Open the Dashboard to watch the behavioural detector respond.
-        </p>
       )}
-      {note && <p className="mt-2 text-sm font-medium text-aegis-text-primary">{note}</p>}
-    </div>
+      {note && <p className="mt-3 text-sm font-medium text-aegis-ink">{note}</p>}
+    </Panel>
   );
 }

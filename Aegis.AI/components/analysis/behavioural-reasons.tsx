@@ -1,3 +1,5 @@
+import { Panel } from '@/components/ui-aegis';
+
 function bulletsFromRecommendation(recommendation?: string): string[] {
   if (!recommendation) return [];
   const match = recommendation.match(/\(([^)]+)\)/);
@@ -26,27 +28,22 @@ export function BehaviouralReasons({
       : null;
 
   return (
-    <div className="surface-card rounded-card p-6">
-      <h3 className="text-sm font-semibold text-aegis-text-primary">Why this was flagged</h3>
-      <p className="mt-0.5 text-xs text-aegis-text-muted">
-        File activity that raised this alert
-      </p>
-      {detail && (
-        <p className="mt-4 text-sm leading-relaxed text-aegis-text-secondary">{detail}</p>
-      )}
+    <Panel title="Why this was flagged" description="File activity that raised this alert">
+      {detail && <p className="text-sm leading-relaxed text-aegis-ink">{detail}</p>}
+      {/* The reasons are independent findings, not steps, so they are bullets rather than numbers. */}
       {bullets.length > 0 && (
-        <ul className="mt-3 space-y-2">
+        <ul className={detail ? 'mt-3 divide-y divide-aegis-rule border-t border-aegis-rule' : 'divide-y divide-aegis-rule'}>
           {bullets.map((reason, index) => (
             <li
               key={`${index}-${reason}`}
-              className="flex items-start gap-2 text-sm leading-relaxed text-aegis-text-secondary"
+              className="flex items-start gap-2.5 py-2.5 text-sm leading-relaxed text-aegis-ink-2 last:pb-0"
             >
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-aegis-danger" />
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-aegis-high" aria-hidden="true" />
               {reason}
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Panel>
   );
 }

@@ -1,29 +1,36 @@
 import type { Config } from 'tailwindcss';
 
+// Theme colours live in app/globals.css as RGB channels (light in :root,
+// dark in .dark) so every utility supports alpha, e.g. bg-aegis-accent/10.
+const aegis = (name: string) => `rgb(var(--aegis-${name}) / <alpha-value>)`;
+
 const config: Config = {
   darkMode: ['class'],
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    // Class-name maps live here too (lib/severity.ts)
+    './lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-primary':
-          'linear-gradient(90deg, #6366F1, #22D3EE)',
-        'gradient-card':
-          'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        serif: ['var(--font-serif)'],
+        mono: ['var(--font-mono)'],
+      },
+      fontSize: {
+        // Page titles (serif). Body sizes use Tailwind's defaults; text-xs (12px) is the floor.
+        title: ['1.75rem', { lineHeight: '2.25rem', letterSpacing: '-0.01em' }],
+      },
+      spacing: {
+        sidebar: '15.5rem',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-        card: '20px',
-        button: '14px',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -66,30 +73,49 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // AegisAI semantic tokens
-        aegis: {
-          'bg-primary': '#09090B',
-          'bg-secondary': '#111217',
-          surface: '#181A20',
-          elevated: '#20232B',
-          sidebar: '#0D1017',
-          'accent-primary': '#6366F1',
-          'accent-secondary': '#22D3EE',
-          success: '#10B981',
-          warning: '#F59E0B',
-          danger: '#EF4444',
-          critical: '#DC2626',
-          info: '#3B82F6',
-          'text-primary': '#F8FAFC',
-          'text-secondary': '#CBD5E1',
-          'text-muted': '#94A3B8',
+        // Categorical chart series (Random Forest = 1, XGBoost = 2)
+        series: {
+          '1': 'rgb(var(--series-1) / <alpha-value>)',
+          '2': 'rgb(var(--series-2) / <alpha-value>)',
         },
-      },
-      boxShadow: {
-        'glow-primary': '0 0 35px rgba(99, 102, 241, 0.18)',
-        'glow-danger': '0 0 20px rgba(239, 68, 68, 0.25)',
-        'glow-success': '0 0 25px rgba(16, 185, 129, 0.2)',
-        'glow-cyan': '0 0 30px rgba(34, 211, 238, 0.18)',
+        // Live terminal (dark in both themes)
+        terminal: {
+          bg: 'rgb(var(--terminal-bg) / <alpha-value>)',
+          bar: 'rgb(var(--terminal-bar) / <alpha-value>)',
+          rule: 'rgb(var(--terminal-rule) / <alpha-value>)',
+          fg: 'rgb(var(--terminal-fg) / <alpha-value>)',
+          muted: 'rgb(var(--terminal-muted) / <alpha-value>)',
+          info: 'rgb(var(--terminal-info) / <alpha-value>)',
+          ok: 'rgb(var(--terminal-ok) / <alpha-value>)',
+          warn: 'rgb(var(--terminal-warn) / <alpha-value>)',
+          high: 'rgb(var(--terminal-high) / <alpha-value>)',
+          crit: 'rgb(var(--terminal-crit) / <alpha-value>)',
+        },
+        aegis: {
+          // Core palette
+          paper: aegis('paper'),
+          surface: aegis('surface'),
+          sunken: aegis('sunken'),
+          ink: aegis('ink'),
+          'ink-2': aegis('ink-2'),
+          muted: aegis('muted'),
+          rule: aegis('rule'),
+          accent: aegis('accent'),
+          teal: aegis('teal'),
+          'on-accent': aegis('on-accent'),
+          scrim: aegis('scrim'),
+          // Severity scale (status/severity only)
+          safe: aegis('safe'),
+          moderate: aegis('moderate'),
+          high: aegis('high'),
+          critical: aegis('critical'),
+          // Severity text placed on a tint of itself (badges)
+          'safe-strong': aegis('safe-strong'),
+          'moderate-strong': aegis('moderate-strong'),
+          'high-strong': aegis('high-strong'),
+          'critical-strong': aegis('critical-strong'),
+
+        },
       },
       keyframes: {
         'accordion-down': {

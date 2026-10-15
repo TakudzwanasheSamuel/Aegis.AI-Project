@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/layout/page-header';
 import { SandboxWorkspace } from '@/components/sandbox/sandbox-workspace';
 import { RotateCcw, Terminal } from 'lucide-react';
 
+import { buttonClasses } from '@/components/ui-aegis/button';
+
 export default function SandboxPage() {
   const resetRef = useRef<(() => void) | null>(null);
 
@@ -17,14 +19,14 @@ export default function SandboxPage() {
       <PageHeader
         title="Scenario Sandbox"
         subtitle="Start a live simulation or load a scenario, then watch the verdict."
-        icon={<Terminal className="h-6 w-6 text-aegis-accent-secondary" />}
+        icon={<Terminal />}
         actions={
           <button
             type="button"
             onClick={() => resetRef.current?.()}
-            className="flex items-center gap-2 rounded-button border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm font-medium text-aegis-text-secondary transition-colors hover:bg-white/[0.06] hover:text-white"
+            className={buttonClasses('secondary')}
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
             Reset
           </button>
         }

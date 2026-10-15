@@ -1,82 +1,103 @@
 'use client';
 
-import { Send } from 'lucide-react';
+import { Loader2, RotateCcw, Send } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Panel, buttonClasses } from '@/components/ui-aegis';
 import { Slider } from '@/components/ui/slider';
 import {
   TELEMETRY_SLIDER_CONFIG,
   type NumericTelemetryKey,
   type TelemetryPayload,
 } from '@/lib/sandbox/types';
+import { cn } from '@/lib/utils';
 
 interface TelemetrySlidersProps {
   telemetry: TelemetryPayload;
   onChange: (telemetry: TelemetryPayload) => void;
   onSend: () => void;
   sending: boolean;
+  /** Restores the selected scenario's own values; omitted when no scenario is selected. */
+  onResetToScenario?: () => void;
 }
+
+const FIELD =
+  'h-9 w-full rounded-md border border-aegis-rule bg-aegis-surface px-3 text-sm text-aegis-ink focus-visible:border-aegis-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-aegis-accent';
 
 export function TelemetrySliders({
   telemetry,
   onChange,
   onSend,
   sending,
+  onResetToScenario,
 }: TelemetrySlidersProps) {
   const updateNumeric = (key: NumericTelemetryKey, value: number) => {
     onChange({ ...telemetry, [key]: value });
   };
 
   return (
-    <div className="surface-card rounded-card p-6">
-      <div>
-        <h3 className="text-sm font-semibold text-aegis-text-primary">
-          Advanced Telemetry Tweak Panel
-        </h3>
-        <p className="mt-0.5 text-xs text-aegis-text-muted">
-          Edit live TelemetryPayload fields, then POST to FastAPI /api/v1/telemetry/assess
-        </p>
-      </div>
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+    <Panel
+      title="Advanced Telemetry Tweak Panel"
+      description="Edit live TelemetryPayload fields, then POST to FastAPI /api/v1/telemetry/assess"
+      meta={
+        onResetToScenario ? (
+          <button
+            type="button"
+            onClick={onResetToScenario}
+            className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-aegis-accent underline-offset-4 hover:underline"
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+            Reset to scenario
+          </button>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-            Hostname
-          </span>
-          <Input
+          <span className="text-xs font-medium text-aegis-muted">Hostname</span>
+          <input
             value={telemetry.hostname}
             onChange={(event) => onChange({ ...telemetry, hostname: event.target.value })}
-            className="h-9 border-white/[0.08] bg-white/[0.03] text-xs"
+            className={cn(FIELD, 'font-mono')}
           />
         </label>
         <label className="space-y-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-            Snapshot label
-          </span>
-          <Input
+          <span className="text-xs font-medium text-aegis-muted">Snapshot label</span>
+          <input
             value={telemetry.snapshot_label}
             onChange={(event) => onChange({ ...telemetry, snapshot_label: event.target.value })}
-            className="h-9 border-white/[0.08] bg-white/[0.03] text-xs"
+            className={cn(FIELD, 'font-mono')}
           />
         </label>
       </div>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 divide-y divide-aegis-rule">
         {TELEMETRY_SLIDER_CONFIG.map((config) => {
           const value = telemetry[config.key];
-          const displayValue = config.unit
-            ? `${value}${config.unit === '%' ? '%' : ` ${config.unit}`}`
-            : String(value);
+          const inputId = `telemetry-${config.key}`;
+          const unitSuffix = config.unit === '%' ? '%' : config.unit ? ` ${config.unit}` : '';
 
           return (
-            <div key={config.key}>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-medium text-aegis-text-secondary">
+            <div key={config.key} className="py-3 first:pt-0 last:pb-0">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label htmlFor={inputId} className="min-w-0 truncate font-mono text-xs text-aegis-ink-2">
                   {config.label}
                 </label>
-                <span className="font-mono text-xs tabular-nums text-aegis-accent-secondary">
-                  {displayValue}
+                <span className="flex items-center gap-1">
+                  <input
+                    id={inputId}
+                    type="number"
+                    inputMode="decimal"
+                    value={value}
+                    min={config.min}
+                    max={config.max}
+                    step={config.step}
+                    onChange={(event) => {
+                      const next = event.target.valueAsNumber;
+                      if (!Number.isNaN(next)) updateNumeric(config.key, next);
+                    }}
+                    className="h-8 w-28 rounded-md border border-aegis-rule bg-aegis-surface px-2 text-right font-mono text-sm tabular-nums text-aegis-ink focus-visible:border-aegis-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-aegis-accent"
+                  />
+                  {unitSuffix && <span className="text-xs text-aegis-muted">{unitSuffix.trim()}</span>}
                 </span>
               </div>
               <Slider
@@ -85,16 +106,16 @@ export function TelemetrySliders({
                 max={config.max}
                 step={config.step}
                 onValueChange={([next]) => updateNumeric(config.key, next)}
-                className="[&_[data-radix-slider-track]]:h-1.5 [&_[data-radix-slider-track]]:bg-white/[0.06] [&_[data-radix-slider-range]]:bg-aegis-accent-primary [&_[data-radix-slider-thumb]]:h-4 [&_[data-radix-slider-thumb]]:w-4 [&_[data-radix-slider-thumb]]:border-aegis-accent-primary"
+                aria-label={config.label}
               />
-              <div className="mt-1 flex justify-between text-[10px] text-aegis-text-muted">
+              <div className="mt-1 flex justify-between font-mono text-xs tabular-nums text-aegis-muted">
                 <span>
                   {config.min}
-                  {config.unit === '%' ? '%' : config.unit ? ` ${config.unit}` : ''}
+                  {unitSuffix}
                 </span>
                 <span>
                   {config.max}
-                  {config.unit === '%' ? '%' : config.unit ? ` ${config.unit}` : ''}
+                  {unitSuffix}
                 </span>
               </div>
             </div>
@@ -102,14 +123,20 @@ export function TelemetrySliders({
         })}
       </div>
 
-      <Button
-        className="btn-gradient mt-8 w-full gap-2 text-sm font-semibold text-white"
+      <button
+        type="button"
+        className={buttonClasses('primary', 'md', 'mt-6 h-10 w-full')}
         disabled={sending}
+        aria-busy={sending}
         onClick={onSend}
       >
-        <Send className="h-4 w-4" />
+        {sending ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <Send className="h-4 w-4" aria-hidden="true" />
+        )}
         {sending ? 'Dispatching Telemetry…' : 'Send Telemetry to FastAPI Gateway'}
-      </Button>
-    </div>
+      </button>
+    </Panel>
   );
 }

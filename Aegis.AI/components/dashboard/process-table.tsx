@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Search } from 'lucide-react';
 
+import { DataTable, Panel, RiskBar, SeverityBadge, Skeleton, THead, Td, Th, Tr } from '@/components/ui-aegis';
 import type { AssessmentRecord } from '@/lib/api';
 import { apiSeverityToUi } from '@/lib/history/map-record';
+import { SEVERITY_CLASSES } from '@/lib/severity';
+import { cn } from '@/lib/utils';
 
 function statusFromSeverity(severity: string): 'Safe' | 'Warning' | 'High Risk' {
   const ui = apiSeverityToUi(severity);
@@ -15,34 +18,11 @@ function statusFromSeverity(severity: string): 'Safe' | 'Warning' | 'High Risk' 
   return 'High Risk';
 }
 
-function StatusBadge({ status }: { status: 'Safe' | 'Warning' | 'High Risk' }) {
-  const styles = {
-    Safe: 'bg-aegis-success/10 text-aegis-success border-aegis-success/20',
-    Warning: 'bg-aegis-warning/10 text-aegis-warning border-aegis-warning/20',
-    'High Risk': 'bg-aegis-danger/10 text-aegis-danger border-aegis-danger/20',
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${styles[status]}`}>
-      {status}
-    </span>
-  );
-}
-
-function RiskBar({ risk }: { risk: number }) {
-  const color = risk >= 70 ? '#EF4444' : risk >= 25 ? '#F59E0B' : '#10B981';
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-16 rounded-full bg-white/[0.06]">
-        <div className="h-1.5 rounded-full" style={{ width: `${Math.min(100, risk)}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-xs font-medium tabular-nums" style={{ color }}>{risk}%</span>
-    </div>
-  );
-}
-
 interface ProcessTableProps {
   records: AssessmentRecord[];
   updatedAt: Date | null;
+  /** Extra header control (the Stream | Table switch). */
+  headerExtra?: React.ReactNode;
 }
 
 interface TelemetryLog {
@@ -51,7 +31,13 @@ interface TelemetryLog {
   tone: 'safe' | 'warning' | 'danger';
 }
 
-export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
+const LOG_TONE_CLASS: Record<TelemetryLog['tone'], string> = {
+  safe: SEVERITY_CLASSES.safe.strongText,
+  warning: SEVERITY_CLASSES.moderate.strongText,
+  danger: SEVERITY_CLASSES.high.strongText,
+};
+
+export function ProcessTable({ records, updatedAt, headerExtra }: ProcessTableProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [now, setNow] = useState<Date | null>(null);
@@ -94,7 +80,8 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
       ].slice(0, 8),
     );
     setFlashId(latest.id);
-    const timer = window.setTimeout(() => setFlashId(null), 1000);
+    // Matches the 1.5s .row-arrival fade in globals.css.
+    const timer = window.setTimeout(() => setFlashId(null), 1500);
     return () => window.clearTimeout(timer);
   }, [records]);
 
@@ -114,136 +101,117 @@ export function ProcessTable({ records, updatedAt }: ProcessTableProps) {
     : `scanning  ${hostname}  no new snapshot`;
 
   return (
-    <div className="surface-card rounded-card overflow-hidden">
-      <div className="relative border-b border-white/[0.06]">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <h3 className="text-sm font-semibold text-aegis-text-primary">Live Telemetry</h3>
-            <p className="mt-0.5 text-xs text-aegis-text-muted">
-              {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()}` : 'Waiting for the first update'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
-            <Search className="h-3.5 w-3.5 text-aegis-text-muted" />
+    <Panel
+      title="Live Telemetry"
+      flush
+      meta={
+        <>
+          {headerExtra}
+          <span className="font-mono text-xs tabular-nums">
+            {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()}` : 'Waiting for the first update'}
+          </span>
+          <label className="flex h-8 items-center gap-2 rounded-md border border-aegis-rule bg-aegis-paper px-2.5 focus-within:border-aegis-accent">
+            <Search className="h-4 w-4 shrink-0 text-aegis-muted" aria-hidden="true" />
             <input
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Filter snapshots..."
-              className="w-32 bg-transparent text-xs text-aegis-text-secondary placeholder:text-aegis-text-muted focus:outline-none"
+              aria-label="Filter snapshots"
+              className="w-36 bg-transparent text-sm text-aegis-ink placeholder:text-aegis-muted focus:outline-none focus-visible:outline-none"
             />
-          </div>
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
-          <div className="animate-scan-sweep h-full w-1/3 bg-gradient-to-r from-transparent via-aegis-accent-secondary to-transparent" />
-        </div>
-      </div>
-
-      <div className="border-b border-white/[0.06] bg-[#0A0C10] px-4 py-3 font-mono text-[11px] leading-5">
-        <p className="text-aegis-accent-secondary">
-          {scanLine}
-          <span className="animate-blink-cursor ml-1 text-aegis-text-primary">▌</span>
-        </p>
+          </label>
+        </>
+      }
+    >
+      {/* Agent activity log */}
+      <div
+        className="border-b border-aegis-rule bg-aegis-sunken px-5 py-2.5 font-mono text-xs leading-5">
+        <p className="truncate text-aegis-muted">{scanLine}</p>
         {logs.map((entry) => (
-          <p
-            key={entry.id}
-            className={
-              entry.tone === 'danger'
-                ? 'text-aegis-danger'
-                : entry.tone === 'warning'
-                  ? 'text-aegis-warning'
-                  : 'text-aegis-success'
-            }
-          >
+          <p key={entry.id} className={cn('truncate', LOG_TONE_CLASS[entry.tone])}>
             {entry.text}
           </p>
         ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/[0.06]">
-              {['Snapshot', 'Hostname', 'Risk', 'Status', ''].map((header) => (
-                <th key={header || 'go'} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-aegis-text-muted">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-aegis-text-muted">
-                  No assessments yet. Run the endpoint agent or send a sandbox payload.
-                </td>
+      <DataTable minWidth="min-w-[640px]" label="Live Telemetry">
+        <THead>
+          <tr>
+            <Th>Snapshot</Th>
+            <Th>Hostname</Th>
+            <Th align="right">Risk</Th>
+            <Th>Status</Th>
+            <Th>
+              <span className="sr-only">Open</span>
+            </Th>
+          </tr>
+        </THead>
+        <tbody>
+          {filtered.length === 0 && !updatedAt ? (
+            // First fetch still in flight: shimmer rows instead of the empty-state text.
+            [0, 1, 2, 3].map((row) => (
+              <tr key={row} className="border-b border-aegis-rule last:border-b-0" aria-hidden="true">
+                <Td><Skeleton className="h-4 w-32" /></Td>
+                <Td><Skeleton className="h-4 w-24" /></Td>
+                <Td align="right"><Skeleton className="ml-auto h-4 w-20" /></Td>
+                <Td><Skeleton className="h-4 w-16" /></Td>
+                <Td />
               </tr>
-            ) : (
-              filtered.map((record) => {
-                const status = statusFromSeverity(record.severity);
-                const isHighRisk = status === 'High Risk';
-                return (
-                  <tr
-                    key={record.id}
-                    onClick={() => router.push(`/analysis?id=${record.id}`)}
-                    className={`group cursor-pointer border-b border-white/[0.04] transition-colors duration-300 hover:bg-white/[0.04] ${
-                      flashId === record.id
-                        ? isHighRisk
-                          ? 'animate-row-flash-danger'
-                          : 'animate-row-flash'
-                        : isHighRisk
-                          ? 'bg-aegis-danger/[0.06]'
-                          : ''
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {isHighRisk && (
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aegis-danger opacity-60" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-aegis-danger" />
-                          </span>
-                        )}
-                        <span className={`text-xs font-medium ${isHighRisk ? 'text-aegis-danger' : 'text-aegis-text-primary'}`}>
-                          {record.snapshot_label}
+            ))
+          ) : filtered.length === 0 ? (
+            <tr>
+              <Td colSpan={5} align="center" className="h-24 text-aegis-muted">
+                No assessments yet. Run the endpoint agent or send a sandbox payload.
+              </Td>
+            </tr>
+          ) : (
+            filtered.map((record) => {
+              const status = statusFromSeverity(record.severity);
+              return (
+                <Tr
+                  key={record.id}
+                  interactive
+                  onClick={() => router.push(`/analysis?id=${record.id}`)}
+                  className={cn('group', flashId === record.id && 'row-arrival')}
+                >
+                  <Td className="font-medium">{record.snapshot_label}</Td>
+                  <Td>
+                    <span className="block max-w-[160px] truncate font-mono text-xs text-aegis-ink-2">
+                      {record.hostname}
+                    </span>
+                  </Td>
+                  <Td align="right">
+                    <RiskBar risk={record.risk_score} />
+                  </Td>
+                  <Td>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <SeverityBadge severity={status} />
+                      {record.triggered_by && (
+                        <span className="whitespace-nowrap text-xs text-aegis-muted">
+                          {record.triggered_by === 'behavioural'
+                            ? 'File-Activity Monitor'
+                            : 'Memory-forensic model'}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="block max-w-[160px] truncate font-mono text-[11px] text-aegis-text-muted">
-                        {record.hostname}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3"><RiskBar risk={record.risk_score} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col items-start gap-1.5">
-                        <StatusBadge status={status} />
-                        {record.triggered_by && (
-                          <span className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium text-aegis-text-muted">
-                            {record.triggered_by === 'behavioural'
-                              ? 'File-Activity Monitor'
-                              : 'Memory-forensic model'}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/analysis?id=${record.id}`}
-                        onClick={(event) => event.stopPropagation()}
-                        className="flex items-center justify-end"
-                        aria-label={`Open analysis for ${record.snapshot_label}`}
-                      >
-                        <ChevronRight className="h-4 w-4 text-aegis-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                      )}
+                    </div>
+                  </Td>
+                  <Td align="right" className="w-10 pl-0">
+                    <Link
+                      href={`/analysis?id=${record.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="inline-flex rounded-sm text-aegis-muted hover:text-aegis-ink"
+                      aria-label={`Open analysis for ${record.snapshot_label}`}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </Td>
+                </Tr>
+              );
+            })
+          )}
+        </tbody>
+      </DataTable>
+    </Panel>
   );
 }

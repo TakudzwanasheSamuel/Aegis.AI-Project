@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { FileJson, Upload, X } from 'lucide-react';
 
+import { Notice, Panel } from '@/components/ui-aegis';
 import { cn } from '@/lib/utils';
 
 interface TelemetryUploadProps {
@@ -10,6 +11,12 @@ interface TelemetryUploadProps {
   uploading: boolean;
   error: string | null;
   onClearError: () => void;
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function TelemetryUpload({
@@ -21,11 +28,13 @@ export function TelemetryUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
 
   const handleFile = useCallback(
     (file: File) => {
       onClearError();
       setFileName(file.name);
+      setFileSize(file.size);
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === 'string') {
@@ -45,27 +54,25 @@ export function TelemetryUpload({
   };
 
   return (
-    <div className="surface-card rounded-card p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-aegis-accent-secondary/20 bg-aegis-accent-secondary/10">
-          <FileJson className="h-4 w-4 text-aegis-accent-secondary" />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-aegis-text-primary">
-            Telemetry Payload Upload
-          </h3>
-          <p className="text-xs text-aegis-text-muted">
-            Batch-evaluate saved trace files (.json or .csv)
-          </p>
-        </div>
-      </div>
-
+    <Panel
+      title={
+        <span className="flex items-center gap-2">
+          <FileJson className="h-4 w-4 text-aegis-muted" aria-hidden="true" />
+          Telemetry Payload Upload
+        </span>
+      }
+      description="Batch-evaluate saved trace files (.json or .csv)"
+    >
       <div
         role="button"
         tabIndex={0}
+        aria-busy={uploading}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
         }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -74,32 +81,37 @@ export function TelemetryUpload({
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
         className={cn(
-          'mt-4 flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors',
+          'flex min-h-[140px] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-8 text-center transition-colors',
           isDragging
-            ? 'border-aegis-accent-primary/50 bg-aegis-accent-primary/[0.06]'
-            : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.03]',
+            ? 'border-solid border-aegis-accent bg-aegis-accent/[0.06]'
+            : 'border-aegis-rule bg-aegis-paper hover:border-aegis-muted/60',
           uploading && 'pointer-events-none opacity-60',
         )}
       >
-        <Upload className="h-8 w-8 text-aegis-text-muted" />
-        <p className="mt-3 text-sm font-medium text-aegis-text-secondary">
+        <Upload className={cn('h-7 w-7', isDragging ? 'text-aegis-accent' : 'text-aegis-muted')} aria-hidden="true" />
+        <p className="mt-3 text-sm font-medium text-aegis-ink">
           Upload Telemetry Payload (.json or .csv)
         </p>
-        <p className="mt-1 text-xs text-aegis-text-muted">
+        <p className="mt-1 text-sm text-aegis-muted">
           Drag and drop a saved trace file, or click to browse
         </p>
         {fileName && (
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-aegis-text-secondary">
-            {fileName}
+          <p className="mt-3 inline-flex items-center gap-2 rounded-md border border-aegis-rule bg-aegis-surface py-1 pl-3 pr-1 text-xs text-aegis-ink-2">
+            <span className="font-mono">{fileName}</span>
+            {fileSize != null && (
+              <span className="font-mono tabular-nums text-aegis-muted">{formatSize(fileSize)}</span>
+            )}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setFileName(null);
+                setFileSize(null);
               }}
-              className="text-aegis-text-muted hover:text-aegis-text-primary"
+              className="flex h-6 w-6 items-center justify-center rounded-sm text-aegis-muted hover:bg-aegis-sunken hover:text-aegis-ink"
+              aria-label="Clear selected file"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </p>
         )}
@@ -116,11 +128,7 @@ export function TelemetryUpload({
         }}
       />
 
-      {error && (
-        <p className="mt-3 rounded-lg border border-aegis-danger/20 bg-aegis-danger/10 px-3 py-2 text-xs text-aegis-danger">
-          {error}
-        </p>
-      )}
-    </div>
+      {error && <Notice className="mt-3">{error}</Notice>}
+    </Panel>
   );
 }

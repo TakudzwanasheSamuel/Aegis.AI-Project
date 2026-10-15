@@ -1,3 +1,5 @@
+import { emitApiEvent } from '@/lib/api-events';
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -84,10 +86,28 @@ export interface ResearchBenchmark {
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Accept: 'application/json' },
-    cache: 'no-store',
-  });
+  const started = performance.now();
+  const report = (status: number, ok: boolean) =>
+    emitApiEvent({
+      method: 'GET',
+      path: path.split('?')[0],
+      status,
+      ok,
+      durationMs: Math.max(1, Math.round(performance.now() - started)),
+      at: Date.now(),
+    });
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+  } catch (err) {
+    report(0, false);
+    throw err;
+  }
+  report(response.status, response.ok);
   if (!response.ok) {
     throw new Error(`API ${path} failed with HTTP ${response.status}`);
   }
@@ -145,15 +165,19 @@ export async function pingHealth(): Promise<{
     });
     const latencyMs = Math.max(1, Math.round(performance.now() - started));
     if (!response.ok) {
+      emitApiEvent({ method: 'GET', path: '/health', status: response.status, ok: false, durationMs: latencyMs, at: Date.now() });
       return { ok: false, latencyMs, payload: null };
     }
     const payload = (await response.json()) as HealthResponse;
     const ok = payload.status === 'online' && payload.db_connected !== false;
+    emitApiEvent({ method: 'GET', path: '/health', status: response.status, ok, durationMs: latencyMs, at: Date.now() });
     return { ok, latencyMs, payload };
   } catch {
+    const latencyMs = Math.max(1, Math.round(performance.now() - started));
+    emitApiEvent({ method: 'GET', path: '/health', status: 0, ok: false, durationMs: latencyMs, at: Date.now() });
     return {
       ok: false,
-      latencyMs: Math.max(1, Math.round(performance.now() - started)),
+      latencyMs,
       payload: null,
     };
   }

@@ -3,6 +3,7 @@ import {
   BrainCircuit,
   Terminal,
   BarChart3,
+  Database,
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
@@ -38,6 +39,12 @@ export const navRoutes: NavRoute[] = [
     href: '/analysis',
     icon: BrainCircuit,
     description: 'Model explainability & feature attribution',
+  },
+  {
+    label: 'Historical Analytics',
+    href: '/history',
+    icon: Database,
+    description: 'Persisted incident logs & SHAP audit trails',
   },
   {
     label: 'Scenario Sandbox',

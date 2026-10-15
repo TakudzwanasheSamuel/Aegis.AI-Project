@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
+import { BrandMark, Wordmark } from '@/components/layout/brand-mark';
 import { useGatewayStatus } from '@/components/layout/gateway-status';
+import { CountUp } from '@/components/motion/count-up';
 import { navRoutes } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +24,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     <>
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-aegis-scrim/40 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -29,109 +32,97 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-aegis-sidebar transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex w-sidebar flex-col border-r border-aegis-rule bg-aegis-surface transition-transform duration-200 ease-out lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex h-20 items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-aegis-accent-primary to-aegis-accent-secondary shadow-glow-primary transition-transform group-hover:scale-105">
-              <ShieldCheck className="h-6 w-6 text-white" strokeWidth={2.2} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-gradient leading-none">
-                AegisAI
-              </span>
-              <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-aegis-text-muted">
-                Threat Analytics
-              </span>
-            </div>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-aegis-rule px-5">
+          <Link href="/" className="flex items-center gap-2.5 rounded-sm">
+            <BrandMark className="h-7 w-7" />
+            <span className="flex flex-col">
+              <Wordmark />
+              <span className="text-xs leading-tight text-aegis-muted">Threat Analytics</span>
+            </span>
           </Link>
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden text-aegis-text-muted hover:text-aegis-text-primary transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-aegis-muted transition-colors hover:bg-aegis-sunken hover:text-aegis-ink lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mx-4 h-px bg-white/[0.06]" />
+        <nav className="flex-1 overflow-y-auto px-3 py-5" aria-label="Navigation">
+          <p className="mb-2 px-3 text-xs font-medium text-aegis-muted">Navigation</p>
+          <ul className="space-y-0.5">
+            {navRoutes.map((route) => {
+              const isActive =
+                route.href === '/' ? pathname === '/' : pathname.startsWith(route.href);
+              const Icon = route.icon;
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
-          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-aegis-text-muted">
-            Navigation
-          </p>
-          {navRoutes.map((route) => {
-            const isActive =
-              route.href === '/' ? pathname === '/' : pathname.startsWith(route.href);
-            const Icon = route.icon;
-
-            return (
-              <Link
-                key={route.href}
-                href={route.href}
-                onClick={onClose}
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                  isActive
-                    ? 'text-white'
-                    : 'text-aegis-text-secondary hover:text-white hover:bg-white/[0.05]',
-                )}
-              >
-                {isActive && (
-                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-aegis-accent-primary/20 to-aegis-accent-secondary/10 border border-white/[0.08]" />
-                )}
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-aegis-accent-primary to-aegis-accent-secondary" />
-                )}
-                <Icon
-                  className={cn(
-                    'relative h-5 w-5 shrink-0 transition-colors',
-                    isActive
-                      ? 'text-aegis-accent-secondary'
-                      : 'text-aegis-text-muted group-hover:text-aegis-accent-secondary',
-                  )}
-                  strokeWidth={2}
-                />
-                <span className="relative flex flex-col">
-                  <span className={cn(isActive && 'text-gradient font-semibold')}>{route.label}</span>
-                  <span className="text-[10px] font-normal text-aegis-text-muted leading-tight">
-                    {route.description}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
+              return (
+                <li key={route.href}>
+                  <Link
+                    href={route.href}
+                    onClick={onClose}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={cn(
+                      'group relative flex items-start gap-3 rounded-r-md px-3 py-2 transition-colors',
+                      isActive
+                        ? 'bg-aegis-sunken text-aegis-ink'
+                        : 'text-aegis-ink-2 hover:bg-aegis-sunken/60 hover:text-aegis-ink',
+                    )}
+                  >
+                    {/* The active bar slides between items (shared layoutId). */}
+                    {isActive && (
+                      <motion.span
+                        layoutId="sidebar-active-indicator"
+                        className="bg-grad-accent absolute inset-y-1 left-0 w-0.5 rounded-full"
+                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <Icon
+                      className={cn(
+                        'mt-0.5 h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5',
+                        isActive ? 'text-aegis-ink' : 'text-aegis-muted',
+                      )}
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                    <span className="flex min-w-0 flex-col">
+                      <span className={cn('text-sm leading-5', isActive ? 'font-semibold' : 'font-medium')}>
+                        {route.label}
+                      </span>
+                      <span className="text-xs leading-4 text-aegis-muted">{route.description}</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
 
-        <div className="p-4">
-          <div className="surface-card rounded-2xl p-4">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                {online && (
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-aegis-success opacity-60" />
-                )}
-                <span
-                  className={cn(
-                    'relative inline-flex h-2.5 w-2.5 rounded-full',
-                    online ? 'bg-aegis-success' : 'bg-aegis-danger',
-                  )}
-                />
-              </span>
-              <span className="text-xs font-medium text-aegis-text-secondary">
-                {online ? 'AI Engine Online' : 'AI Engine Offline'}
-              </span>
-            </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-aegis-text-muted">
-              8-feature RF + XGBoost ensemble ·{' '}
-              <span className="tabular-nums text-aegis-text-secondary">
-                {metrics.threats_detected.toLocaleString()}
-              </span>{' '}
-              high-severity assessments stored
-            </p>
+        <div className="shrink-0 border-t border-aegis-rule px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'h-2 w-2 shrink-0 rounded-full',
+                online ? 'bg-aegis-safe' : 'bg-aegis-critical',
+              )}
+              aria-hidden="true"
+            />
+            <span className="text-sm font-medium text-aegis-ink-2">
+              {online ? 'AI Engine Online' : 'AI Engine Offline'}
+            </span>
           </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-aegis-muted">
+            8-feature RF + XGBoost ensemble ·{' '}
+            <CountUp value={metrics.threats_detected} className="text-aegis-ink-2" />{' '}
+            high-severity assessments stored
+          </p>
         </div>
       </aside>
     </>
